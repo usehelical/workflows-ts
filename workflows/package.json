@@ -1,0 +1,24 @@
+{
+  "name": "helical-workflow",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/pg": "^8.16.0",
+    "prettier": "^3.7.4",
+    "typescript": "^2.0.4",
+    "vitest": "^4.0.17"
+  },
+  "dependencies": {
+    "kysely": "^0.28.9",
+    "pg": "^8.16.3",
+    "pino": "^10.2.0"
+  }
+}
