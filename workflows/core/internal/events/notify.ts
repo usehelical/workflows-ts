@@ -1,5 +1,5 @@
 import { Client } from 'pg';
-import { withDBRetry } from '../db/retry';
+import { withDbRetry } from '../db/retry';
 
 type SubscriptionCallback<T> = (data: T) => void;
 
@@ -11,7 +11,7 @@ export class NotifyEventBus {
   constructor(private readonly client: Client) {}
 
   async susbcribeToChannels(subscriptions: Record<Channel, SubscriptionCallback<any>>) {
-    await withDBRetry(async () => {
+    await withDbRetry(async () => {
       await this.client.connect();
 
       try {

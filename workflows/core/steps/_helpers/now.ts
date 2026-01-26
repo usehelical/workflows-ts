@@ -1,4 +1,4 @@
-import { getWorkflowStore } from '../internal/store';
+import { getWorkflowStore } from '../../internal/store';
 
 const NOW_OPERATION_NAME = 'fida::helpers::now';
 

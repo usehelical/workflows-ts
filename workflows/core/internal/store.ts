@@ -1,37 +1,26 @@
-import { AsyncLocalStorage } from 'node:async_hooks';
-
 import { Kysely } from 'kysely';
 import { MessageEventBus } from './events/message-event-bus';
 import { OperationManager } from './operation-manager';
 import { StateEventBus } from './events/state-event-bus';
-
-export interface Step {
-  name: string;
-  sequenceId: number;
-  currentAttempt: number;
-  maxAttempts: number;
-}
+import { asyncLocalStorage } from '../../client/runtime';
+import { RunOutsideOfWorkflowError } from './errors';
 
 export interface WorkflowStore {
-  db: Kysely<any>;
-  isCancelled: boolean;
+  runId: string;
+  runPath: string[];
   executorId: string;
-  parentCtx?: WorkflowStore;
-  workflowId: string;
-  currentStep?: Step;
+  abortSignal: AbortSignal;
+  parentWorkflow?: WorkflowStore;
+  operationManager: OperationManager;
   messageEventBus: MessageEventBus;
   stateEventBus: StateEventBus;
-  operationManager: OperationManager;
-}
-
-export async function runWithStore<R>(
-  ctx: WorkflowStore,
-  storage: AsyncLocalStorage<WorkflowStore>,
-  callback: () => Promise<R>,
-): Promise<R> {
-  return await storage.run(ctx, callback);
+  db: Kysely<any>;
 }
 
 export function getWorkflowStore(): WorkflowStore {
-  return null as unknown as WorkflowStore;
+  const store = asyncLocalStorage.getStore();
+  if (!store) {
+    throw new RunOutsideOfWorkflowError();
+  }
+  return store;
 }

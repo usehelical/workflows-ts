@@ -1,17 +1,23 @@
-import { Kysely, PostgresDialect } from 'kysely';
+import { Kysely, PostgresDialect, Transaction as KyselyTransaction } from 'kysely';
 import { Pool } from 'pg';
+import { DB } from './types';
 
-export function createDbClient() {
+export type DatabaseConfig = {
+  connectionString: string;
+};
+
+export function createDbClient(config: DatabaseConfig) {
   const dialect = new PostgresDialect({
     pool: new Pool({
-      database: 'test',
-      host: 'localhost',
-      user: 'admin',
-      port: 5434,
+      connectionString: config.connectionString,
       max: 10,
     }),
   });
-  return new Kysely({
+  return new Kysely<DB>({
     dialect,
   });
 }
+
+export type Database = Kysely<DB>;
+
+export type Transaction = KyselyTransaction<DB>;

@@ -1,4 +1,4 @@
-import { sleep } from '../utils';
+import { sleep } from '../utils/sleep';
 
 // Error detection helpers
 type AnyErr = {
@@ -128,7 +128,7 @@ function isRetriableDBError(err: unknown): boolean {
  * @param options.onRetry - The callback to call when a retry is needed.
  * @returns The result of the function.
  */
-export async function withDBRetry<T>(
+export async function withDbRetry<T>(
   fn: () => Promise<T>,
   options: {
     initialBackoffMs?: number;

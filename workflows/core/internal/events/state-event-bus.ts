@@ -1,9 +1,10 @@
 import { Kysely } from 'kysely';
 
-import { Repository, StateRetrievalRequest } from '../../repository';
+import { StateRetrievalRequest } from '../repository/repository';
 import { PollingLoop } from './polling-loop';
 
 import { EventBus, EventBusCore } from './event-bus-core';
+import { getState } from '../repository/get-state';
 
 type SubscriptionCallback<T> = (data: T) => void;
 
@@ -15,10 +16,7 @@ export class StateEventBus implements EventBus {
   private readonly bus: EventBusCore<StateEvent>;
   private readonly pollingLoop: PollingLoop;
 
-  constructor(
-    private readonly db: Kysely<any>,
-    private readonly repository: Repository,
-  ) {
+  constructor(private readonly db: Kysely<any>) {
     this.pollingLoop = new PollingLoop(POLLING_FALLBACK_INTERVAL_MS, this.handlePoll.bind(this));
     this.bus = new EventBusCore({ allowWildcardSubscriptions: false }, this.pollingLoop);
   }
@@ -32,7 +30,7 @@ export class StateEventBus implements EventBus {
     ) {
       return;
     }
-    this.repository.getState(this.db, workflowId, key).then((state) => {
+    getState(this.db, workflowId, key).then((state) => {
       if (!state) {
         return;
       }
@@ -45,10 +43,10 @@ export class StateEventBus implements EventBus {
     if (stateRetrievalRequests.length === 0) {
       return;
     }
-    const states = await this.repository.getMultipleStates(this.db, stateRetrievalRequests);
-    for (const state of states) {
-      this.bus.emitEvent(state.workflowId, state.key, state.data, state.changeId);
-    }
+    // const states = []
+    // for (const state of states) {
+    //   this.bus.emitEvent(state.runId, state.key, state.data, state.changeId);
+    // }
   }
 
   subscribe<T>(workflowId: string, key: string, callback: SubscriptionCallback<T>) {
@@ -66,9 +64,9 @@ export class StateEventBus implements EventBus {
 
 function getStateRetrievalRequests(keys: string[][]): StateRetrievalRequest[] {
   return keys.map((k) => {
-    const [workflowId, key] = k;
+    const [runId, key] = k;
     return {
-      workflowId,
+      runId,
       key,
     };
   });

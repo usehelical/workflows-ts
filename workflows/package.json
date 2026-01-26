@@ -4,21 +4,31 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "typecheck": "tsc --noEmit"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "fmt": "prettier --write .",
+    "db:generate:types": "kysely-codegen --out-file ./core/internal/db/types.ts",
+    "db:migrate": "docker-compose exec -T postgres psql -U postgres -d postgres < core/internal/db/migrations/init.up.sql",
+    "db:destroy": "docker-compose exec -T postgres psql -U postgres -d postgres -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@electric-sql/pglite": "^0.3.15",
     "@types/pg": "^8.16.0",
+    "kysely-codegen": "^0.19.0",
+    "kysely-pglite": "^0.6.1",
     "prettier": "^3.7.4",
     "typescript": "^2.0.4",
+    "uuid_ossp": "link:@electric-sql/pglite/contrib/uuid_ossp",
     "vitest": "^4.0.17"
   },
   "dependencies": {
     "kysely": "^0.28.9",
     "pg": "^8.16.3",
-    "pino": "^10.2.0"
+    "pino": "^10.2.0",
+    "serialize-error": "^13.0.1"
   }
 }

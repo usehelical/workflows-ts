@@ -1,25 +1,30 @@
-import { getWorkflowStore } from './internal/store';
-
-type StepOptions = {
+export type RetryConfig = {
   maxRetries?: number;
   retryDelay?: number;
   backOffRate?: number;
 };
 
-export async function runStep<TReturn>(
-  fn: () => Promise<TReturn> | TReturn,
-  options?: StepOptions,
-) {
-  const { operationManager } = getWorkflowStore();
-  const stepName = fn.name || '<unknown>';
+type StepOptions = RetryConfig & {
+  name?: string;
+};
 
-  const result = operationManager.getOperationResult();
-  if (result) {
-    return result;
-  }
+export type StepFunction<Args extends any[], R> = (...args: Args) => Promise<R> | R;
 
-  // need to handle retries etc. here
-  return await operationManager.runOperationAndRecordResult(stepName, async () => {
-    return await fn();
-  });
+export type StepDefinition<TArgs extends unknown[], TReturn> = {
+  fn: StepFunction<TArgs, TReturn>;
+  args: TArgs;
+  options: StepOptions;
+};
+
+export function defineStep<TArgs extends unknown[], TReturn>(
+  fn: StepFunction<TArgs, TReturn>,
+  options: StepOptions = {},
+): (...args: TArgs) => StepDefinition<TArgs, TReturn> {
+  return (...args: TArgs) => {
+    return {
+      fn,
+      args,
+      options,
+    };
+  };
 }

@@ -1,9 +1,9 @@
 export class PollingLoop {
-  private intervalMs: number;
-  private jitterFactor: number;
+  private readonly intervalMs: number;
+  private readonly jitterFactor: number;
   private intervalHandle: NodeJS.Timeout | null = null;
-  private callback: () => void;
-  private running: boolean;
+  private readonly callback: () => void;
+  private running: boolean = false;
 
   constructor(intervalMs: number, callback: () => void, jitterFactor: number = 0.1) {
     this.intervalMs = intervalMs;

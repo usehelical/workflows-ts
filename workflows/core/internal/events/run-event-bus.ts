@@ -1,24 +1,24 @@
 import { Kysely } from 'kysely';
 import { WorkflowStatus } from '../../workflow';
 
-import { Repository } from '../../repository';
+import { Repository } from '../repository/repository';
 
 import { EventBus, EventBusCore } from './event-bus-core';
 import { PollingLoop } from './polling-loop';
 
-interface WorkflowEvent {
+interface RunEvent {
   status: WorkflowStatus;
   queueName?: string;
   result?: unknown;
   error?: string;
 }
 
-type WorkflowEventCallback = (e: WorkflowEvent) => void;
+type RunEventCallback = (e: RunEvent) => void;
 
 const POLLING_FALLBACK_INTERVAL_MS = 10_000;
 
-export class WorkflowEventBus implements EventBus {
-  private readonly bus: EventBusCore<WorkflowEvent>;
+export class RunEventBus implements Omit<EventBus, 'emitEvent'> {
+  private readonly bus: EventBusCore<RunEvent>;
   private readonly pollingLoop: PollingLoop;
 
   constructor(
@@ -38,7 +38,7 @@ export class WorkflowEventBus implements EventBus {
     ) {
       return;
     }
-    this.repository.getWorkflow(this.db, workflowId).then((workflow) => {
+    this.repository.getRun(this.db, workflowId).then((workflow) => {
       if (!workflow) {
         return;
       }
@@ -63,7 +63,7 @@ export class WorkflowEventBus implements EventBus {
     if (workflowIds.length === 0) {
       return;
     }
-    const workflows = await this.repository.getMultipleWorkflows(this.db, workflowIds);
+    const workflows = await this.repository.getMultipleRuns(this.db, workflowIds);
     for (const workflow of workflows) {
       this.bus.emitEvent(
         workflow.id,
@@ -79,12 +79,12 @@ export class WorkflowEventBus implements EventBus {
     }
   }
 
-  subscribe(workflowId: string, status: WorkflowStatus | '*', cb: WorkflowEventCallback) {
-    return this.bus.subscribe(workflowId, status, cb);
+  subscribe(runId: string, status: WorkflowStatus | '*', cb: RunEventCallback) {
+    return this.bus.subscribe(runId, status, cb);
   }
 
-  emitEvent(workflowId: string, status: WorkflowStatus, event: WorkflowEvent, changeId: number) {
-    this.bus.emitEvent(workflowId, status, event, changeId);
+  emitEvent(runId: string, status: WorkflowStatus, event: RunEvent, changeId: number) {
+    this.bus.emitEvent(runId, status, event, changeId);
   }
 
   destroy() {

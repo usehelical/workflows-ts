@@ -1,75 +1,126 @@
 import { Kysely, Transaction } from 'kysely';
-import { withDBRetry } from './db/retry';
+import { withDbRetry } from './db/retry';
+import { deserialize, deserializeError, serialize, serializeError } from './serialization';
 import { getWorkflowStore } from './store';
-import { WorkflowCancelledError } from './errors';
+import { RunCancelledError } from './errors';
+import { getRun } from './repository/get-run';
+import { WorkflowStatus } from '../workflow';
+import { insertOperation } from './repository/insert-operation';
 
-export interface Operation<T = unknown> {
-  workflowId: string;
-  operationName: string;
-  sequenceId: number;
-  outputs: T;
+export interface OperationResult {
+  result?: string;
+  error?: string;
 }
 
-// the operation manager is responsible recording and retrieving operation results
-// when workflows are replayed it can be prepopulated with operations from the database
 export class OperationManager {
   private sequenceId = 0;
   constructor(
     private readonly db: Kysely<any>,
-    private readonly workflowId: string,
-    private readonly operations: Operation[] = [],
-  ) {}
+    private readonly runId: string,
+    // operations are stored in reverse order so the most recent operation is at the beginning of the array
+    private readonly operations: OperationResult[] = [],
+  ) { }
 
-  getOperationResult<T = unknown>(): Operation<T> | null {
-    this.sequenceId++;
-    return this.operations[this.sequenceId - 1] as Operation<T>;
+  getOperationResult(): OperationResult | null {
+    const operation = this.operations.pop() as OperationResult;
+    if (operation) {
+      this.sequenceId++;
+      return operation;
+    }
+    return null;
   }
 
-  async runOperationAndRecordResult<T>(
+  reserveSequenceId() {
+    return this.sequenceId++;
+  }
+
+  async recordResult(
     operationName: string,
-    callback: (tx: Transaction<any>) => Promise<T>,
+    sequenceId: number,
+    result: string | null,
+    tx?: Transaction<any>,
   ) {
-    return withDBRetry(async () => {
-      return await this.db.transaction().execute(async (tx) => {
-        await checkCancellation(tx, this.workflowId);
-        const result = await callback(tx);
-        await recordOperation(tx, this.workflowId, operationName, this.sequenceId, result);
-        this.sequenceId++;
-        return result;
+    if (tx) {
+      await insertOperation(tx, this.runId, operationName, sequenceId, result ?? undefined);
+    } else {
+      await withDbRetry(async () => {
+        await insertOperation(this.db, this.runId, operationName, sequenceId, result ?? undefined);
       });
-    });
+    }
+  }
+
+  async recordError(
+    operationName: string,
+    sequenceId: number,
+    error: string | null,
+    tx?: Transaction<any>,
+  ) {
+    if (tx) {
+      await insertOperation(
+        tx,
+        this.runId,
+        operationName,
+        sequenceId,
+        undefined,
+        error ?? undefined,
+      );
+    } else {
+      await withDbRetry(async () => {
+        await insertOperation(
+          this.db,
+          this.runId,
+          operationName,
+          sequenceId,
+          undefined,
+          error ?? undefined,
+        );
+      });
+    }
   }
 }
 
-async function recordOperation(
-  tx: Transaction<any>,
-  workflowId: string,
+export function returnOrThrowOperationResult<T = void>(
+  op: OperationResult,
+): T extends void ? void : T {
+  if (op.error) {
+    throw deserializeError(op.error);
+  }
+
+  if (op.result === null || op.result === undefined) {
+    return undefined as T extends void ? void : T;
+  }
+
+  return deserialize(op.result) as T extends void ? void : T;
+}
+export async function executeAndRecordOperation<T>(
+  operationManager: OperationManager,
   operationName: string,
-  sequenceId: number,
-  outputs: any,
-) {
-  return await tx
-    .insertInto('operations')
-    .values({
-      workflow_id: workflowId,
-      operation_name: operationName,
-      sequence_id: sequenceId,
-      outputs: outputs,
-    })
-    .execute();
+  callback: () => Promise<T>,
+): Promise<T> {
+  const seqId = operationManager.reserveSequenceId();
+  try {
+    const result = await callback();
+    const serializedResult = serialize(result);
+    await checkCancellation();
+    await operationManager.recordResult(operationName, seqId, serializedResult);
+    return result;
+  } catch (error) {
+    if (error instanceof RunCancelledError) {
+      throw error;
+    }
+    const err = error instanceof Error ? error : new Error(String(error));
+    await operationManager.recordError(operationName, seqId, serializeError(err));
+    throw error;
+  }
 }
 
-async function checkCancellation(tx: Transaction<any>, workflowId: string) {
-  const { isCancelled } = getWorkflowStore();
-  if (isCancelled) {
-    throw new WorkflowCancelledError();
+async function checkCancellation() {
+  const { abortSignal, runId, db } = getWorkflowStore();
+  if (abortSignal.aborted) {
+    throw new RunCancelledError();
   }
-  const workflow = await tx
-    .selectFrom('workflows')
-    .selectAll()
-    .where('workflow_id', '=', workflowId)
-    .executeTakeFirst();
-  if (workflow?.status === 'CANCELLED') {
-    throw new WorkflowCancelledError();
+  const run = await withDbRetry(async () => getRun(db, runId));
+  if (run?.status === WorkflowStatus.CANCELLED) {
+    throw new RunCancelledError();
   }
 }
