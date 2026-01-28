@@ -5,19 +5,19 @@ import { StateEventBus } from './events/state-event-bus';
 import { asyncLocalStorage } from '../../client/runtime';
 import { RunOutsideOfWorkflowError } from './errors';
 
-export interface WorkflowStore {
+export interface ExecutionContext {
   runId: string;
   runPath: string[];
   executorId: string;
   abortSignal: AbortSignal;
-  parentWorkflow?: WorkflowStore;
+  parentWorkflow?: ExecutionContext;
   operationManager: OperationManager;
   messageEventBus: MessageEventBus;
   stateEventBus: StateEventBus;
   db: Kysely<any>;
 }
 
-export function getWorkflowStore(): WorkflowStore {
+export function getExecutionContext(): ExecutionContext {
   const store = asyncLocalStorage.getStore();
   if (!store) {
     throw new RunOutsideOfWorkflowError();

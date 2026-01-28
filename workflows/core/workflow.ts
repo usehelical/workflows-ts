@@ -28,4 +28,7 @@ export function defineWorkflow<TArgs extends any[], TReturn>(
   };
 }
 
-export type WorkflowEntry = () => WorkflowDefinition<any[], any>;
+export type WorkflowEntry<
+  TArgs extends unknown[] = unknown[],
+  TReturn = unknown,
+> = () => WorkflowDefinition<TArgs, TReturn>;

@@ -13,6 +13,8 @@ export enum ErrorType {
   TIMEOUT = 'TIMEOUT',
   CANCEL = 'CANCEL',
   DEADLINE = 'DEADLINE',
+  RUN_NOT_CANCELLABLE = 'RUN_NOT_CANCELLABLE',
+  QUEUE_NOT_FOUND = 'QUEUE_NOT_FOUND',
 }
 
 export class InvalidWorkflowTransitionError extends Error {
@@ -122,5 +124,20 @@ export class CancelError extends Error {
   constructor(message: string) {
     super(message);
     this.name = ErrorType.CANCEL;
+  }
+}
+
+export class RunNotCancellableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = ErrorType.RUN_NOT_CANCELLABLE;
+    this.message = message;
+  }
+}
+
+export class QueueNotFoundError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = ErrorType.QUEUE_NOT_FOUND;
   }
 }

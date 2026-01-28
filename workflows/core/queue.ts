@@ -8,6 +8,7 @@ export type QueueOptions = {
   concurrency?: number;
   rateLimit?: QueueRateLimit;
   priorityEnabled?: boolean;
+  name?: string;
 };
 
 const defaultQueueOptions: QueueOptions = {
@@ -16,17 +17,10 @@ const defaultQueueOptions: QueueOptions = {
   priorityEnabled: false,
 };
 
-export function defineQueue(
-  name: string,
-  options: QueueOptions = defaultQueueOptions,
-): QueueDefinition {
-  return {
-    name,
-    options,
-  };
+export function defineQueue(options: QueueOptions = defaultQueueOptions): QueueEntry {
+  return () => options;
 }
 
-export type QueueDefinition = {
-  name: string;
-  options: QueueOptions;
-};
+export type QueueEntry = () => QueueOptions;
+
+export type QueueDefinition = QueueOptions & { name: string };

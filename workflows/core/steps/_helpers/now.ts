@@ -1,9 +1,9 @@
-import { getWorkflowStore } from '../../internal/store';
+import { getExecutionContext } from '../../internal/execution-context';
 
 const NOW_OPERATION_NAME = 'fida::helpers::now';
 
 export async function now() {
-  const { operationManager } = getWorkflowStore();
+  const { operationManager } = getExecutionContext();
   const existingResult = operationManager.getOperationResult();
   if (existingResult) {
     return existingResult.outputs as number;

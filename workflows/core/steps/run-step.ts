@@ -3,7 +3,7 @@ import {
   FatalError,
   MaxRetriesExceededError,
 } from '../internal/errors';
-import { getWorkflowStore } from '../internal/store';
+import { getExecutionContext } from '../internal/execution-context';
 import { sleep } from '../internal/utils/sleep';
 import { RetryConfig, StepDefinition, StepFunction } from '../step';
 import {
@@ -14,7 +14,7 @@ import {
 export async function runStep<TArgs extends unknown[], TReturn>(
   step: StepDefinition<TArgs, TReturn>,
 ) {
-  const { operationManager } = getWorkflowStore();
+  const { operationManager } = getExecutionContext();
   const stepName = step.options.name || step.fn.name || '<unknown>';
 
   const op = operationManager.getOperationResult();

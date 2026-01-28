@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { setupIntegrationTest } from '../client/test-utils';
+import { setupIntegrationTest } from './test-utils';
 import { createInstance } from '../client/runtime';
 import { defineWorkflow, WorkflowStatus } from '../core/workflow';
 import { Database } from '../core/internal/db/client';
@@ -133,7 +133,7 @@ describe('Workflows', () => {
       },
     });
 
-    const run = await instance.startWorkflow(exampleWorkflow, workflowArgs);
+    const run = await instance.runWorkflow(exampleWorkflow, workflowArgs);
 
     const status = await run.status();
 
@@ -141,7 +141,7 @@ describe('Workflows', () => {
 
     resolve(undefined);
 
-    const result = await run.result;
+    const result = await run.result();
 
     const newStatus = await run.status();
     expect(newStatus).toBe(WorkflowStatus.SUCCESS);
@@ -176,7 +176,7 @@ describe('Workflows', () => {
       },
     });
 
-    const run = await instance.startWorkflow(exampleWorkflow);
+    const run = await instance.runWorkflow(exampleWorkflow);
 
     const status = await run.status();
 
@@ -186,7 +186,7 @@ describe('Workflows', () => {
     reject(error);
 
     try {
-      await run.result;
+      await run.result();
       throw new Error('Expected error to be thrown');
     } catch (e) {
       expect((e as Error).message).toBe(error.message);
@@ -213,9 +213,9 @@ describe('Workflows', () => {
       },
     });
 
-    const run = await instance.startWorkflow(exampleWorkflow);
+    const run = await instance.runWorkflow(exampleWorkflow);
 
-    const result = await run.result;
+    const result = await run.result();
     expect(result).toBeUndefined();
     const status = await run.status();
     expect(status).toBe(WorkflowStatus.SUCCESS);
@@ -240,12 +240,12 @@ describe('Workflows', () => {
       },
     });
 
-    const run = await instance.startWorkflow(exampleWorkflow);
+    const run = await instance.runWorkflow(exampleWorkflow);
 
     const status = await run.status();
     expect(status).toBe(WorkflowStatus.PENDING);
 
-    await instance.cancelWorkflow(run.id);
+    await instance.cancelRun(run.id);
 
     const newStatus = await run.status();
     expect(newStatus).toBe(WorkflowStatus.CANCELLED);
@@ -269,7 +269,7 @@ describe('Workflows', () => {
       },
     });
 
-    const run = await instance.startWorkflow(exampleWorkflow, undefined, { timeout: 100 });
+    const run = await instance.runWorkflow(exampleWorkflow, undefined, { timeout: 100 });
 
     const status = await run.status();
     expect(status).toBe(WorkflowStatus.PENDING);
@@ -298,7 +298,7 @@ describe('Workflows', () => {
       },
     });
 
-    const run = await instance.startWorkflow(exampleWorkflow, undefined, {
+    const run = await instance.runWorkflow(exampleWorkflow, undefined, {
       deadline: Date.now() + 100,
     });
 

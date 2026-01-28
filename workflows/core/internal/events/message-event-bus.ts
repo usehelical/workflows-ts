@@ -15,6 +15,7 @@ export class MessageEventBus implements EventBus {
   constructor(private readonly db: Kysely<any>) {
     this.pollingLoop = new PollingLoop(POLLING_FALLBACK_INTERVAL_MS, this.handlePoll.bind(this));
     this.bus = new EventBusCore({ allowWildcardSubscriptions: true }, this.pollingLoop);
+    this.pollingLoop.start();
   }
 
   handleNotify(payload: string) {
@@ -26,7 +27,7 @@ export class MessageEventBus implements EventBus {
   }
 
   private async handlePoll() {
-    // check if there are new messages to be consumed if yes how many?
+    // check if there are new messages to be consumed
   }
 
   subscribe(destinationWorkflowId: string, type: string, cb: MessageCallback) {

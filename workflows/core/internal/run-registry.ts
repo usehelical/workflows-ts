@@ -1,7 +1,7 @@
-import { WorkflowStore } from './store';
+import { ExecutionContext } from './execution-context';
 
 export interface RunEntry<TReturn = unknown> {
-  store: WorkflowStore;
+  store: ExecutionContext;
   promise: Promise<TReturn>;
   abortController: AbortController;
   getPromiseState(): 'pending' | 'fulfilled' | 'rejected';

@@ -5,9 +5,9 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     // Uncomment if you want coverage
-    // coverage: {
-    //   provider: 'v8',
-    //   reporter: ['text', 'json', 'html'],
-    // },
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+    },
   },
 });

@@ -1,47 +1,38 @@
 import { Kysely } from 'kysely';
-import { Repository } from '../core/internal/repository/repository';
 import { WorkflowStatus } from '../core/workflow';
 import { RunEventBus } from '../core/internal/events/run-event-bus';
 import { RunNotFoundError, RunCancelledError } from '../core/internal/errors';
 import { deserialize, deserializeError } from '../core/internal/serialization';
-import { RunRegistry, RunEntry } from '../core/internal/run-registry';
+import { RunEntry } from '../core/internal/run-registry';
+import { RuntimeContext } from '../core/internal/runtime-context';
+import { getRunStatus } from '../core/internal/repository/get-run-status';
+import { getRun } from '../core/internal/repository/get-run';
 
 export interface Run<TReturn = unknown> {
   id: string;
   status: () => Promise<WorkflowStatus>;
-  result: Promise<TReturn>;
+  result: () => Promise<TReturn>;
 }
 
-type RunHandleDependencies = {
-  runRegistry: RunRegistry;
-  repository: Repository;
-  db: Kysely<any>;
-  runEventBus: RunEventBus;
-};
-
 export function createRunHandle<TReturn = unknown>(
+  runtimeContext: RuntimeContext,
   id: string,
-  dependencies: RunHandleDependencies,
 ): Run<TReturn> {
-  const run = dependencies.runRegistry.getRun(id);
+  const { runRegistry, db, runEventBus } = runtimeContext;
+  const run = runRegistry.getRun(id);
 
   if (run) {
     return {
       id,
       status: () => getRunStatusFromRegistry(run),
-      result: run.promise as Promise<TReturn>,
+      result: () => run.promise as Promise<TReturn>,
     };
   }
 
   return {
     id,
-    status: () => getRunStatusFromDb(id, dependencies.repository, dependencies.db),
-    result: getRunResult<TReturn>(
-      id,
-      dependencies.repository,
-      dependencies.runEventBus,
-      dependencies.db,
-    ),
+    status: () => getRunStatus(db, id),
+    result: () => getRunResult<TReturn>(id, runEventBus, db),
   };
 }
 
@@ -49,35 +40,22 @@ async function getRunStatusFromRegistry(runEntry: RunEntry): Promise<WorkflowSta
   if (runEntry.store.abortSignal.aborted) {
     return WorkflowStatus.CANCELLED;
   }
-
   const promiseState = runEntry.getPromiseState();
-
   if (promiseState === 'pending') {
     return WorkflowStatus.PENDING;
   }
-
   if (promiseState === 'fulfilled') {
     return WorkflowStatus.SUCCESS;
   }
-
   return WorkflowStatus.ERROR;
-}
-
-async function getRunStatusFromDb(id: string, repository: Repository, db: Kysely<any>) {
-  const run = await repository.getRun(db, id);
-  if (!run) {
-    throw new RunNotFoundError(id);
-  }
-  return run.status;
 }
 
 async function getRunResult<TReturn = unknown>(
   id: string,
-  repository: Repository,
   runEventBus: RunEventBus,
   db: Kysely<any>,
 ) {
-  const run = await repository.getRun(db, id);
+  const run = await getRun(db, id);
   if (!run) {
     throw new RunNotFoundError(id);
   }
@@ -100,7 +78,7 @@ async function getRunResult<TReturn = unknown>(
       if (e.status === WorkflowStatus.SUCCESS || e.status === WorkflowStatus.ERROR) {
         unsubscribe();
         try {
-          const completedRun = await repository.getRun(db, id);
+          const completedRun = await getRun(db, id);
           if (!completedRun) {
             reject(new RunNotFoundError(id));
             return;

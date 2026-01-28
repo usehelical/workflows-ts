@@ -1,19 +1,18 @@
-import { WorkflowStatus } from "../../workflow";
-import { Database } from "../db/client";
+import { WorkflowStatus } from '../../workflow';
+import { Database } from '../db/client';
 
 export async function getPendingRuns(db: Database, executorId: string) {
-    const runs = await db.selectFrom('runs')
-        .where('status', '=', WorkflowStatus.PENDING)
-        .where('executor_id', '=', executorId)
-        .execute()
+  const pendingRuns = await db
+    .selectFrom('runs')
+    .select(['id', 'path', 'inputs', 'workflow_name'])
+    .where('status', '=', WorkflowStatus.PENDING)
+    .where('executor_id', '=', executorId)
+    .execute();
 
-    // only take roots from this executorid
-    // keep in mind that the workflow can still have a parent with a different executorId
-    // check for cancellation of parent run
-
-    return runs.map((r) => ({
-        id: r.id,
-        path: r.path,
-        changeId: r.change_id,
-    }))
+  return pendingRuns.map((run) => ({
+    id: run.id,
+    path: run.path,
+    inputs: run.inputs,
+    workflowName: run.workflow_name,
+  }));
 }

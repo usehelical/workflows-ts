@@ -14,9 +14,12 @@ export type UpsertRunOptions = {
   parentRunId?: string;
   status: WorkflowStatus;
   idempotencyKey?: string;
+  timeout?: number;
+  deadline?: number;
   isRecovery?: boolean;
   isDequeue?: boolean;
   maxRetries?: number;
+  queueName?: string;
 };
 
 export type UpsertRunResult = {
@@ -48,7 +51,10 @@ export async function upsertRun(
       idempotency_key: options.idempotencyKey,
       executor_id: options.executorId,
       parent_run_id: options.parentRunId,
+      timeout_ms: options.timeout,
+      deadline_epoch_ms: options.deadline,
       recovery_attempts: initialRecoveryAttempts,
+      queue_name: options.queueName,
       created_at: sql`(extract(epoch from now()) * 1000)::bigint`,
       updated_at: sql`(extract(epoch from now()) * 1000)::bigint`,
     })

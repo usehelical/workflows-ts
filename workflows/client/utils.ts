@@ -2,7 +2,7 @@ import { Database } from '../core/internal/db/client';
 import { MessageEventBus } from '../core/internal/events/message-event-bus';
 import { StateEventBus } from '../core/internal/events/state-event-bus';
 import { OperationManager, OperationResult } from '../core/internal/operation-manager';
-import { WorkflowStore } from '../core/internal/store';
+import { ExecutionContext } from '../core/internal/execution-context';
 
 export type WorkflowStoreDependencies = {
   db: Database;
@@ -17,7 +17,7 @@ export function createWorkflowStore(
   runPath: string[],
   dependencies: WorkflowStoreDependencies,
   operations: OperationResult[] = [],
-): WorkflowStore {
+): ExecutionContext {
   return {
     runId: runId,
     runPath: runPath,

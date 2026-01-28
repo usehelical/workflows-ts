@@ -1,6 +1,5 @@
 import { Kysely } from 'kysely';
 
-import { StateRetrievalRequest } from '../repository/repository';
 import { PollingLoop } from './polling-loop';
 
 import { EventBus, EventBusCore } from './event-bus-core';
@@ -19,6 +18,7 @@ export class StateEventBus implements EventBus {
   constructor(private readonly db: Kysely<any>) {
     this.pollingLoop = new PollingLoop(POLLING_FALLBACK_INTERVAL_MS, this.handlePoll.bind(this));
     this.bus = new EventBusCore({ allowWildcardSubscriptions: false }, this.pollingLoop);
+    this.pollingLoop.start();
   }
 
   handleNotify(payload: string) {
@@ -62,7 +62,7 @@ export class StateEventBus implements EventBus {
   }
 }
 
-function getStateRetrievalRequests(keys: string[][]): StateRetrievalRequest[] {
+function getStateRetrievalRequests(keys: string[][]) {
   return keys.map((k) => {
     const [runId, key] = k;
     return {

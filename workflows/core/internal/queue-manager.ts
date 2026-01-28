@@ -1,49 +1,74 @@
-import { Transaction } from 'kysely';
+import { PollingLoop } from './events/polling-loop';
+import { findAndMarkStartableWorkflows } from './repository/find-and-mark-startable-workflows';
+import { QueueRateLimit } from '../queue';
+import { upsertRun } from './repository/upsert-run';
+import { deserialize, serialize } from './serialization';
+import { WorkflowStatus } from '../workflow';
+import { executeWorkflow } from './execute-workflow';
+import { RuntimeContext } from './runtime-context';
 
-interface QueueConfig {
+export interface QueueInstance {
   name: string;
-  workerConcurrency?: number;
-  priorityEnabled?: boolean;
+  config: {
+    rateLimit?: QueueRateLimit;
+    workerConcurrency?: number;
+    concurrency?: number;
+  };
+  availableSlots?: number;
 }
 
-interface QueueInstance {
-  name: string;
-  availableSlots: number;
-}
+const POLLING_INTERVAL_MS = 1000;
 
-// listen on the notify status channel for queued workflows filter to only accept registered queues and registered workflows
-// listen on the in-memory event bus for newly enqueued workflows filter to only accept registered queues and registered workflows
-// How can I deduplicate the events from the notify event bus and the in-memory event bus?
+export class QueueManager {
+  private readonly pollingLoop: PollingLoop;
+  private readonly queues: Record<string, QueueInstance> = {};
 
-// onEvent do findAndMarkStartableWorkflows and start them (throttl)
+  constructor(private readonly ctx: RuntimeContext) {
+    this.pollingLoop = new PollingLoop(POLLING_INTERVAL_MS, this.handlePoll.bind(this));
+    this.pollingLoop.start();
+    this.queues = this.ctx.queueRegistry.getQueueInstances();
+  }
 
-// QueueManager should listen on the notify event bus
-// and on the memory event bus for newly enqueued workflows and start them
-// (notify event bus and memory event bus should be deduplicated smh)
+  private handlePoll() {
+    for (const queueName of Object.keys(this.queues)) {
+      this.dispatch(queueName);
+    }
+  }
 
-async function findAndMarkStartableWorkflows(
-  tx: Transaction<any>,
-  queueName: string,
-  slots: number,
-  priorityEnabled?: boolean,
-) {
-  return await tx
-    .selectFrom('workflows')
-    .where('status', '=', 'PENDING')
-    .where('queue_name', '=', queueName)
-    .orderBy('priority', 'desc')
-    .limit(slots)
-    .execute();
-}
+  private async dispatch(queueName: string) {
+    const { db, executorId } = this.ctx;
+    const runs = await findAndMarkStartableWorkflows(
+      db,
+      queueName,
+      this.queues[queueName].availableSlots,
+    );
+    for (const run of runs) {
+      const workflow = this.ctx.workflowRegistry.getByName(run.workflow_name);
+      if (!workflow) {
+        console.error(`Workflow ${run.workflow_name} not found`);
+        continue;
+      }
 
-async function startWorkflows(
-  tx: Transaction<any>,
-  workflowIds: string[],
-  executorId: string,
-): Promise<void> {
-  await tx
-    .updateTable('workflows')
-    .set({ status: 'STARTED', executor_id: executorId, started_at_epoch_ms: Date.now() })
-    .where('workflow_id', 'in', workflowIds)
-    .execute();
+      await upsertRun(db, {
+        runId: run.id,
+        path: run.path,
+        inputs: serialize(run.inputs),
+        executorId: executorId,
+        workflowName: run.workflow_name,
+        status: WorkflowStatus.PENDING,
+      });
+
+      await executeWorkflow(this.ctx, {
+        runId: run.id,
+        runPath: run.path,
+        workflowName: run.workflow_name,
+        fn: workflow.fn,
+        args: deserialize<unknown[]>(run.inputs ?? '[]'),
+      });
+    }
+  }
+
+  destroy() {
+    this.pollingLoop.stop();
+  }
 }

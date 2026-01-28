@@ -1,7 +1,7 @@
 import { Kysely, Transaction } from 'kysely';
 import { withDbRetry } from './db/retry';
 import { deserialize, deserializeError, serialize, serializeError } from './serialization';
-import { getWorkflowStore } from './store';
+import { getExecutionContext } from './execution-context';
 import { RunCancelledError } from './errors';
 import { getRun } from './repository/get-run';
 import { WorkflowStatus } from '../workflow';
@@ -19,7 +19,7 @@ export class OperationManager {
     private readonly runId: string,
     // operations are stored in reverse order so the most recent operation is at the beginning of the array
     private readonly operations: OperationResult[] = [],
-  ) { }
+  ) {}
 
   getOperationResult(): OperationResult | null {
     const operation = this.operations.pop() as OperationResult;
@@ -92,6 +92,7 @@ export function returnOrThrowOperationResult<T = void>(
 
   return deserialize(op.result) as T extends void ? void : T;
 }
+
 export async function executeAndRecordOperation<T>(
   operationManager: OperationManager,
   operationName: string,
@@ -115,7 +116,7 @@ export async function executeAndRecordOperation<T>(
 }
 
 async function checkCancellation() {
-  const { abortSignal, runId, db } = getWorkflowStore();
+  const { abortSignal, runId, db } = getExecutionContext();
   if (abortSignal.aborted) {
     throw new RunCancelledError();
   }

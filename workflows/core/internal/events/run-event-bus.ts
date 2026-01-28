@@ -1,10 +1,9 @@
 import { Kysely } from 'kysely';
 import { WorkflowStatus } from '../../workflow';
-
-import { Repository } from '../repository/repository';
-
 import { EventBus, EventBusCore } from './event-bus-core';
 import { PollingLoop } from './polling-loop';
+import { getRun } from '../repository/get-run';
+import { getRunBatch } from '../repository/get-run-batch';
 
 interface RunEvent {
   status: WorkflowStatus;
@@ -21,35 +20,33 @@ export class RunEventBus implements Omit<EventBus, 'emitEvent'> {
   private readonly bus: EventBusCore<RunEvent>;
   private readonly pollingLoop: PollingLoop;
 
-  constructor(
-    private readonly db: Kysely<any>,
-    private readonly repository: Repository,
-  ) {
+  constructor(private readonly db: Kysely<any>) {
     this.pollingLoop = new PollingLoop(POLLING_FALLBACK_INTERVAL_MS, this.handlePoll.bind(this));
     this.bus = new EventBusCore({ allowWildcardSubscriptions: true }, this.pollingLoop);
+    this.pollingLoop.start();
   }
 
   handleNotify(payload: string) {
-    const [workflowId, status, changeIdString] = payload.split('::');
+    const [runId, status, changeIdString] = payload.split('::');
     const changeId = Number(changeIdString);
     if (
-      !this.bus.checkHasSubscribers(workflowId, status) ||
-      this.bus.getEventSequence(workflowId, status) >= changeId
+      !this.bus.checkHasSubscribers(runId, status) ||
+      this.bus.getEventSequence(runId, status) >= changeId
     ) {
       return;
     }
-    this.repository.getRun(this.db, workflowId).then((workflow) => {
-      if (!workflow) {
+    getRun(this.db, runId).then((run) => {
+      if (!run) {
         return;
       }
       this.bus.emitEvent(
-        workflowId,
+        runId,
         status,
         {
-          status: workflow.status,
-          queueName: workflow.queueName,
-          result: workflow.output,
-          error: workflow.error,
+          status: run.status,
+          queueName: run.queueName,
+          result: run.output,
+          error: run.error,
         },
         changeId,
       );
@@ -63,28 +60,24 @@ export class RunEventBus implements Omit<EventBus, 'emitEvent'> {
     if (workflowIds.length === 0) {
       return;
     }
-    const workflows = await this.repository.getMultipleRuns(this.db, workflowIds);
-    for (const workflow of workflows) {
+    const runs = await getRunBatch(this.db, workflowIds);
+    for (const run of runs) {
       this.bus.emitEvent(
-        workflow.id,
-        workflow.status,
+        run.id,
+        run.status,
         {
-          status: workflow.status,
-          queueName: workflow.queueName,
-          result: workflow.output,
-          error: workflow.error,
+          status: run.status,
+          queueName: run.queueName,
+          result: run.output,
+          error: run.error,
         },
-        workflow.changeId,
+        run.changeId,
       );
     }
   }
 
   subscribe(runId: string, status: WorkflowStatus | '*', cb: RunEventCallback) {
     return this.bus.subscribe(runId, status, cb);
-  }
-
-  emitEvent(runId: string, status: WorkflowStatus, event: RunEvent, changeId: number) {
-    this.bus.emitEvent(runId, status, event, changeId);
   }
 
   destroy() {
