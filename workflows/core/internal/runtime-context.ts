@@ -1,4 +1,4 @@
-import { Database } from './db/client';
+import { Database } from './db/db';
 import { MessageEventBus } from './events/message-event-bus';
 import { RunEventBus } from './events/run-event-bus';
 import { StateEventBus } from './events/state-event-bus';

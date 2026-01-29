@@ -19,13 +19,13 @@ export interface QueueInstance {
 
 const POLLING_INTERVAL_MS = 1000;
 
+
 export class QueueManager {
   private readonly pollingLoop: PollingLoop;
   private readonly queues: Record<string, QueueInstance> = {};
 
   constructor(private readonly ctx: RuntimeContext) {
     this.pollingLoop = new PollingLoop(POLLING_INTERVAL_MS, this.handlePoll.bind(this));
-    this.pollingLoop.start();
     this.queues = this.ctx.queueRegistry.getQueueInstances();
   }
 
@@ -68,7 +68,12 @@ export class QueueManager {
     }
   }
 
+  start() {
+    this.pollingLoop.start();
+  }
+
   destroy() {
     this.pollingLoop.stop();
   }
 }
+

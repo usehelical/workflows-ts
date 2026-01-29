@@ -17,7 +17,7 @@ type RunEventCallback = (e: RunEvent) => void;
 const POLLING_FALLBACK_INTERVAL_MS = 10_000;
 
 export class RunEventBus implements Omit<EventBus, 'emitEvent'> {
-  private readonly bus: EventBusCore<RunEvent>;
+  private readonly bus: EventBusCore<RunEvent>
   private readonly pollingLoop: PollingLoop;
 
   constructor(private readonly db: Kysely<any>) {

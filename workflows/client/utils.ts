@@ -1,4 +1,4 @@
-import { Database } from '../core/internal/db/client';
+import { Database } from '../core/internal/db/db';
 import { MessageEventBus } from '../core/internal/events/message-event-bus';
 import { StateEventBus } from '../core/internal/events/state-event-bus';
 import { OperationManager, OperationResult } from '../core/internal/operation-manager';

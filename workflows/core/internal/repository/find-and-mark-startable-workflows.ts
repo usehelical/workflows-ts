@@ -1,16 +1,16 @@
 import { WorkflowStatus } from '../../workflow';
-import { Database, Transaction } from '../db/client';
+import { Database, Transaction } from '../db/db';
 
 export async function findAndMarkStartableWorkflows(
-  tx: Database | Transaction,
-  queueName: string,
-  slots?: number,
+    tx: Database | Transaction,
+    queueName: string,
+    slots?: number,
 ) {
-  return await tx
-    .selectFrom('runs')
-    .selectAll()
-    .where('status', '=', WorkflowStatus.PENDING)
-    .where('queue_name', '=', queueName)
-    .$if(slots !== undefined, (qb) => qb.limit(slots!))
-    .execute();
+    return await tx
+        .selectFrom('runs')
+        .selectAll()
+        .where('status', '=', WorkflowStatus.PENDING)
+        .where('queue_name', '=', queueName)
+        .$if(slots !== undefined, (qb) => qb.limit(slots!))
+        .execute();
 }

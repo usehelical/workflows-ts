@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { setupIntegrationTest } from './test-utils';
 import { createInstance } from '../client/runtime';
 import { defineWorkflow, WorkflowStatus } from '../core/workflow';
-import { Database } from '../core/internal/db/client';
+import { Database } from '../core/internal/db/db';
 import { defineStep, StepDefinition } from '../core/step';
 import { runStep } from '../core/steps/run-step';
 import { serialize, deserializeError } from '../core/internal/serialization';

@@ -1,4 +1,4 @@
-import { Database, Transaction } from '../db/client';
+import { Database, Transaction } from '../db/db';
 
 export async function insertOperation(
   tx: Transaction | Database,

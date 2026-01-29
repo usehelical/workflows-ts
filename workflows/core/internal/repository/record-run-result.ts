@@ -1,6 +1,6 @@
 import { sql } from 'kysely';
 import { WorkflowStatus } from '../../workflow';
-import { Database } from '../db/client';
+import { Database } from '../db/db';
 
 type RunResult = {
   result?: string;

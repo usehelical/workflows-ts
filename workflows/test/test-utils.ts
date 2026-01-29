@@ -2,13 +2,13 @@ import { beforeAll, afterAll, beforeEach } from 'vitest';
 import {
   setupTestDatabase,
   teardownTestDatabase,
-  interceptDbClient,
   clearTestDatabase,
+  createTestDriver,
+  getTestDb,
 } from './test-setup';
 import { Kysely } from 'kysely';
 import { DB } from '../core/internal/db/types';
-
-let testDb: Kysely<DB>;
+import { DbDriver } from '../core/internal/db/driver';
 
 /**
  * Reusable test setup for integration tests that need a database.
@@ -18,7 +18,7 @@ let testDb: Kysely<DB>;
  * ```typescript
  * import { setupIntegrationTest } from './test-utils';
  *
- * const { getDb } = setupIntegrationTest();
+ * const { getDb, createDriver } = setupIntegrationTest();
  *
  * describe('My Integration Test', () => {
  *   it('should work', async () => {
@@ -30,8 +30,7 @@ let testDb: Kysely<DB>;
  */
 export function setupIntegrationTest() {
   beforeAll(async () => {
-    testDb = await setupTestDatabase();
-    interceptDbClient(testDb);
+    await setupTestDatabase();
   });
 
   afterAll(async () => {
@@ -39,13 +38,18 @@ export function setupIntegrationTest() {
   });
 
   beforeEach(async () => {
-    await clearTestDatabase(testDb);
+    await clearTestDatabase(getTestDb());
   });
 
   return {
     /**
-     * Get the test database instance
+     * Get a test database instance
      */
-    getDb: () => testDb,
+    getDb: (): Kysely<DB> => getTestDb(),
+    /**
+     * Create a new driver instance for testing cross-process communication.
+     * All drivers share the same underlying PGlite instance.
+     */
+    createDriver: (): DbDriver => createTestDriver(),
   };
 }

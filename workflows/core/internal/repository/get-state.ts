@@ -1,4 +1,4 @@
-import { Database } from '../db/client';
+import { Database } from '../db/db';
 
 export async function getState(db: Database, runId: string, key: string) {
   return {

@@ -1,7 +1,6 @@
 import crypto from 'node:crypto';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { QueueEntry } from '../core/queue';
-import { createDbClient } from '../core/internal/db/client';
 import { WorkflowEntry } from '../core/workflow';
 import { ExecutionContext } from '../core/internal/execution-context';
 import { StateEventBus } from '../core/internal/events/state-event-bus';
@@ -17,6 +16,8 @@ import { QueueRegistry } from '../core/internal/queue-registry';
 import { cancelRun } from './cancel-run';
 import { queueWorkflow, QueueWorkflowOptions } from './queue-workflow';
 import { QueueManager } from '../core/internal/queue-manager';
+import { setupPostgresNotify } from '../core/internal/events/setup-postgres-notify';
+import { createPgDriver } from '../core/internal/db/driver';
 
 type CreateInstanceOptions = {
   instanceId?: string;
@@ -32,7 +33,7 @@ export type CreateInstanceParams = {
 };
 
 export function createInstance(props: CreateInstanceParams) {
-  const db = createDbClient({ connectionString: props.options.connectionString });
+  const { db, client } = createPgDriver({ connectionString: props.options.connectionString });
   const messageEventBus = new MessageEventBus(db);
   const stateEventBus = new StateEventBus(db);
   const executorId = props.options.instanceId || crypto.randomUUID();
@@ -52,15 +53,14 @@ export function createInstance(props: CreateInstanceParams) {
     queueRegistry,
   };
 
-  const queueManager = new QueueManager(runtimeContext)
+  setupPostgresNotify(client, {
+    runs: runEventBus.handleNotify,
+  });
+
+  const queueManager = new QueueManager(runtimeContext);
+  queueManager.start();
 
   recoverPendingRuns(runtimeContext);
-
-  // todo: graceful shurdown
-  process.on('SIGINT', () => {
-    queueManager.destroy();
-    process.exit(0);
-  });
 
   return {
     runWorkflow: async <TArgs extends unknown[], TReturn>(

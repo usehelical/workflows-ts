@@ -32,7 +32,7 @@ create function run_event_trigger() returns trigger as $$
 declare
     payload text := new.id || '::' || new.status || '::' || new.change_id;
 begin 
-    perform pg_notify('helical::runs', payload);
+    perform pg_notify('helical_runs', payload);
     return new;
 end 
 $$ language plpgsql;
@@ -76,7 +76,7 @@ create function message_event_trigger() returns trigger as $$
 declare 
     payload text := new.destination_run_id || '::' || new.type || '::' || new.id;
 begin 
-    perform pg_notify('helical::messages', payload);
+    perform pg_notify('helical_messages', payload);
     return new;
 end; 
 $$ language plpgsql;
@@ -97,7 +97,7 @@ create function state_event_trigger() returns trigger as $$
 declare 
     payload text := new.run_id || '::' || new.key || '::' || new.change_id;
 begin 
-    perform pg_notify('helical::state', payload);
+    perform pg_notify('helical_state', payload);
     return new;
 end; 
 $$ language plpgsql;

@@ -1,5 +1,5 @@
 import { WorkflowStatus } from '../../workflow';
-import { Database } from '../db/client';
+import { Database } from '../db/db';
 
 export async function getRunBatch(db: Database, runIds: string[]) {
   const results = await db
