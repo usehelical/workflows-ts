@@ -73,8 +73,8 @@ export function createInstance(props: CreateInstanceParams) {
     queueWorkflow: async <TArgs extends unknown[], TReturn>(
       queue: QueueEntry | string,
       wf: WorkflowEntry<TArgs, TReturn> | string,
-      args: TArgs,
-      options: QueueWorkflowOptions,
+      args?: TArgs,
+      options?: QueueWorkflowOptions,
     ) => queueWorkflow<TArgs, TReturn>(runtimeContext, queue, wf, args, options),
   };
 }

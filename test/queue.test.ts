@@ -37,7 +37,10 @@ describe('Queue', () => {
         },
       });
 
-      const run = await instance.queueWorkflow('exampleQueue', exampleWorkflow, workflowArgs, {});
+      // @ts-expect-error - args is optional
+      const run = await instance.queueWorkflow('exampleQueue', exampleWorkflow, workflowArgs, {
+        timeout: 1000,
+      });
 
       // check wether the workflow has been queued
       const runStatus = await run.status();

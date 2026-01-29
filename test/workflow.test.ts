@@ -42,6 +42,7 @@ describe('Workflows', () => {
       },
     });
 
+    // @ts-expect-error - args is optional
     const run = await instance.runWorkflow(exampleWorkflow, workflowArgs);
 
     const status = await run.status();

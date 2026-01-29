@@ -8,7 +8,7 @@ const CHANNELS = ['runs', 'messages', 'status'];
 type Channel = (typeof CHANNELS)[number];
 
 type Subscriptions = {
-  [K in Channel]: SubscriptionCallback<unknown>;
+  [K in Channel]: SubscriptionCallback<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 };
 
 export async function setupPostgresNotify(client: Client, subscriptions: Subscriptions) {
