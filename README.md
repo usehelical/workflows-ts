@@ -2,6 +2,9 @@
 
 Simple, typesafe durable workflows without bundler magic
 
+[!WARNING]  
+This is a work in progress
+
 # Goals 
 - simple & typesafe api 
 - minimal deployment complexity (just postgres)
