@@ -2,6 +2,7 @@ import { WorkflowDefinition, WorkflowEntry } from '../workflow';
 
 export class WorkflowRegistry {
   private readonly workflows: Record<string, WorkflowEntry> = {};
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
   private readonly fnToName: Map<Function, string> = new Map();
 
   constructor(workflows: Record<string, WorkflowEntry>) {

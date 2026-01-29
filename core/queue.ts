@@ -12,8 +12,6 @@ export type QueueOptions = {
 };
 
 const defaultQueueOptions: QueueOptions = {
-  workerConcurrency: Infinity,
-  concurrency: Infinity,
   priorityEnabled: false,
 };
 

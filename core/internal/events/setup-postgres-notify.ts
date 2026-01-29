@@ -8,7 +8,7 @@ const CHANNELS = ['runs', 'messages', 'status'];
 type Channel = (typeof CHANNELS)[number];
 
 type Subscriptions = {
-  [K in Channel]: SubscriptionCallback<any>;
+  [K in Channel]: SubscriptionCallback<unknown>;
 };
 
 export async function setupPostgresNotify(client: Client, subscriptions: Subscriptions) {

@@ -1,4 +1,3 @@
-import { Kysely, Transaction } from 'kysely';
 import { withDbRetry } from './db/retry';
 import { deserialize, deserializeError, serialize, serializeError } from './serialization';
 import { getExecutionContext } from './execution-context';
@@ -6,6 +5,7 @@ import { RunCancelledError } from './errors';
 import { getRun } from './repository/get-run';
 import { WorkflowStatus } from '../workflow';
 import { insertOperation } from './repository/insert-operation';
+import { Database, Transaction } from './db/db';
 
 export interface OperationResult {
   result?: string;
@@ -15,7 +15,7 @@ export interface OperationResult {
 export class OperationManager {
   private sequenceId = 0;
   constructor(
-    private readonly db: Kysely<any>,
+    private readonly db: Database,
     private readonly runId: string,
     // operations are stored in reverse order so the most recent operation is at the beginning of the array
     private readonly operations: OperationResult[] = [],
@@ -38,7 +38,7 @@ export class OperationManager {
     operationName: string,
     sequenceId: number,
     result: string | null,
-    tx?: Transaction<any>,
+    tx?: Transaction,
   ) {
     if (tx) {
       await insertOperation(tx, this.runId, operationName, sequenceId, result ?? undefined);
@@ -53,7 +53,7 @@ export class OperationManager {
     operationName: string,
     sequenceId: number,
     error: string | null,
-    tx?: Transaction<any>,
+    tx?: Transaction,
   ) {
     if (tx) {
       await insertOperation(

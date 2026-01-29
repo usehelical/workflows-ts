@@ -1,9 +1,7 @@
-import { Kysely } from 'kysely';
-
 import { PollingLoop } from './polling-loop';
-
 import { EventBus, EventBusCore } from './event-bus-core';
 import { getState } from '../repository/get-state';
+import { Database } from '../db/db';
 
 type SubscriptionCallback<T> = (data: T) => void;
 
@@ -15,7 +13,7 @@ export class StateEventBus implements EventBus {
   private readonly bus: EventBusCore<StateEvent>;
   private readonly pollingLoop: PollingLoop;
 
-  constructor(private readonly db: Kysely<any>) {
+  constructor(private readonly db: Database) {
     this.pollingLoop = new PollingLoop(POLLING_FALLBACK_INTERVAL_MS, this.handlePoll.bind(this));
     this.bus = new EventBusCore({ allowWildcardSubscriptions: false }, this.pollingLoop);
     this.pollingLoop.start();

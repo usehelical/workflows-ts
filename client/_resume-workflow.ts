@@ -3,7 +3,7 @@ import { getRun } from '../core/internal/repository/get-run';
 import { RuntimeContext } from '../core/internal/runtime-context';
 import { WorkflowStatus } from '../core/workflow';
 
-const INTERNAL_QUEUE_NAME = '_helical-internal-queue';
+const INTERNAL_QUEUE_NAME = '_helical_internal_queue';
 
 // TODO: Need to implement queues first (async dispatch)
 

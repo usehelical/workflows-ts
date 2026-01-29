@@ -8,7 +8,7 @@ type StepOptions = RetryConfig & {
   name?: string;
 };
 
-export type StepFunction<Args extends any[], R> = (...args: Args) => Promise<R> | R;
+export type StepFunction<Args extends unknown[], R> = (...args: Args) => Promise<R> | R;
 
 export type StepDefinition<TArgs extends unknown[], TReturn> = {
   fn: StepFunction<TArgs, TReturn>;

@@ -1,9 +1,9 @@
-import { Kysely } from 'kysely';
 import { MessageEventBus } from './events/message-event-bus';
 import { OperationManager } from './operation-manager';
 import { StateEventBus } from './events/state-event-bus';
 import { asyncLocalStorage } from '../../client/runtime';
 import { RunOutsideOfWorkflowError } from './errors';
+import { Database } from './db/db';
 
 export interface ExecutionContext {
   runId: string;
@@ -14,7 +14,7 @@ export interface ExecutionContext {
   operationManager: OperationManager;
   messageEventBus: MessageEventBus;
   stateEventBus: StateEventBus;
-  db: Kysely<any>;
+  db: Database;
 }
 
 export function getExecutionContext(): ExecutionContext {

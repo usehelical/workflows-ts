@@ -118,9 +118,8 @@ describe('PollingLoop', () => {
 
       // Mock Math.random to return predictable values
       const originalRandom = Math.random;
-      let callCount = 0;
+
       Math.random = vi.fn(() => {
-        callCount++;
         return 0.8; // Will produce positive jitter
       });
 

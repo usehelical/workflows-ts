@@ -26,6 +26,7 @@ export async function teardownTestDatabase(): Promise<void> {
       if (pgliteInstance.closed === false) {
         await pgliteInstance.close();
       }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       // Silently ignore errors if already closed
     }

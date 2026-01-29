@@ -3,6 +3,7 @@ import { QueueInstance } from './queue-manager';
 
 export class QueueRegistry {
   private readonly queues: Record<string, QueueEntry> = {};
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
   private readonly fnToName: Map<Function, string> = new Map();
 
   constructor(queues: Record<string, QueueEntry>) {

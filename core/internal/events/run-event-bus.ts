@@ -1,9 +1,9 @@
-import { Kysely } from 'kysely';
 import { WorkflowStatus } from '../../workflow';
 import { EventBus, EventBusCore } from './event-bus-core';
 import { PollingLoop } from './polling-loop';
 import { getRun } from '../repository/get-run';
 import { getRunBatch } from '../repository/get-run-batch';
+import { Database } from '../db/db';
 
 interface RunEvent {
   status: WorkflowStatus;
@@ -20,60 +20,13 @@ export class RunEventBus implements Omit<EventBus, 'emitEvent'> {
   private readonly bus: EventBusCore<RunEvent>;
   private readonly pollingLoop: PollingLoop;
 
-  constructor(private readonly db: Kysely<any>) {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/f6149db0-0a7e-4b67-912f-39e5bca62810', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        location: 'run-event-bus.ts:23',
-        message: 'RunEventBus constructor start',
-        data: { instanceId: Math.random() },
-        timestamp: Date.now(),
-        sessionId: 'debug-session',
-        hypothesisId: 'B',
-      }),
-    }).catch(() => {});
-    // #endregion
+  constructor(private readonly db: Database) {
     this.pollingLoop = new PollingLoop(POLLING_FALLBACK_INTERVAL_MS, this.handlePoll.bind(this));
     this.bus = new EventBusCore({ allowWildcardSubscriptions: true }, this.pollingLoop);
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/f6149db0-0a7e-4b67-912f-39e5bca62810', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        location: 'run-event-bus.ts:25',
-        message: 'RunEventBus constructor complete',
-        data: { hasBus: !!this.bus },
-        timestamp: Date.now(),
-        sessionId: 'debug-session',
-        hypothesisId: 'B',
-      }),
-    }).catch(() => {});
-    // #endregion
     this.pollingLoop.start();
   }
 
   handleNotify(payload: string) {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/f6149db0-0a7e-4b67-912f-39e5bca62810', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        location: 'run-event-bus.ts:29',
-        message: 'handleNotify called',
-        data: {
-          payload,
-          thisContext: this?.constructor?.name,
-          hasBus: !!this?.bus,
-          hasThis: !!this,
-        },
-        timestamp: Date.now(),
-        sessionId: 'debug-session',
-        hypothesisId: 'A',
-      }),
-    }).catch(() => {});
-    // #endregion
     const [runId, status, changeIdString] = payload.split('::');
     const changeId = Number(changeIdString);
     if (

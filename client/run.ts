@@ -1,4 +1,3 @@
-import { Kysely } from 'kysely';
 import { WorkflowStatus } from '../core/workflow';
 import { RunEventBus } from '../core/internal/events/run-event-bus';
 import { RunNotFoundError, RunCancelledError } from '../core/internal/errors';
@@ -7,6 +6,7 @@ import { RunEntry } from '../core/internal/run-registry';
 import { RuntimeContext } from '../core/internal/runtime-context';
 import { getRunStatus } from '../core/internal/repository/get-run-status';
 import { getRun } from '../core/internal/repository/get-run';
+import { Database } from '../core/internal/db/db';
 
 export interface Run<TReturn = unknown> {
   id: string;
@@ -50,11 +50,7 @@ async function getRunStatusFromRegistry(runEntry: RunEntry): Promise<WorkflowSta
   return WorkflowStatus.ERROR;
 }
 
-async function getRunResult<TReturn = unknown>(
-  id: string,
-  runEventBus: RunEventBus,
-  db: Kysely<any>,
-) {
+async function getRunResult<TReturn = unknown>(id: string, runEventBus: RunEventBus, db: Database) {
   const run = await getRun(db, id);
   if (!run) {
     throw new RunNotFoundError(id);

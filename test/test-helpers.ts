@@ -9,7 +9,7 @@ export function createSimpleWorkflow(
   args?: unknown[],
   returnFn?: (stepResults: unknown[]) => unknown,
 ) {
-  return async (...args: unknown[]) => {
+  return async () => {
     const stepResults = [];
     for (const step of steps) {
       stepResults.push(await runStep(step()));
@@ -68,7 +68,7 @@ export async function checkRunInDb(
 export function createMockStep() {
   return defineStep(
     async () => {
-      return { stepResult: 'example' };
+      return;
     },
     {
       name: 'mock-step',
@@ -76,7 +76,7 @@ export function createMockStep() {
   );
 }
 
-export function createResolvableWorkflowStep(promise: Promise<any>) {
+export function createResolvableWorkflowStep(promise: Promise<unknown>) {
   return defineStep(
     async () => {
       return await promise;

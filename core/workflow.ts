@@ -7,14 +7,14 @@ export enum WorkflowStatus {
   MAX_RECOVERY_ATTEMPTS_EXCEEDED = 'MAX_RECOVERY_ATTEMPTS_EXCEEDED',
 }
 
-export type WorkflowFunction<Args extends any[], R> = (...args: Args) => Promise<R> | R;
+export type WorkflowFunction<Args extends unknown[], R> = (...args: Args) => Promise<R> | R;
 
 export type WorkflowDefinition<TArgs extends unknown[] = unknown[], TReturn = unknown> = {
   fn: WorkflowFunction<TArgs, TReturn>;
   maxRecoveryAttempts?: number;
 };
 
-export function defineWorkflow<TArgs extends any[], TReturn>(
+export function defineWorkflow<TArgs extends unknown[], TReturn>(
   fn: WorkflowFunction<TArgs, TReturn>,
   options: {
     maxRecoveryAttempts?: number;
