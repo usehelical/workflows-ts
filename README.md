@@ -2,8 +2,8 @@
 
 Simple, typesafe durable workflows without bundler magic
 
-[!WARNING]  
-This is a work in progress
+>[!WARNING]  
+>This is a work in progress
 
 # Goals 
 - simple & typesafe api 
