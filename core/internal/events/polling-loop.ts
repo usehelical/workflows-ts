@@ -18,13 +18,18 @@ export class PollingLoop {
   }
 
   private scheduleNext() {
-    if (this.intervalHandle === null || !this.running) {
+    if (!this.running) {
       return;
     }
 
     const nextInterval = this.calculateNextInterval();
     this.intervalHandle = setTimeout(() => {
-      this.callback();
+      try {
+        this.callback();
+      } catch (error) {
+        // Log error but continue polling
+        console.error('PollingLoop callback error:', error);
+      }
       this.scheduleNext();
     }, nextInterval);
   }
@@ -38,10 +43,10 @@ export class PollingLoop {
   }
 
   stop() {
-    if (!this.running && this.intervalHandle) {
+    this.running = false;
+    if (this.intervalHandle) {
       clearTimeout(this.intervalHandle);
       this.intervalHandle = null;
-      this.running = false;
     }
   }
 

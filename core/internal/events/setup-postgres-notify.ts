@@ -1,4 +1,3 @@
-
 import { Client } from '../db/driver';
 import { withDbRetry } from '../db/retry';
 
@@ -10,12 +9,9 @@ type Channel = (typeof CHANNELS)[number];
 
 type Subscriptions = {
   [K in Channel]: SubscriptionCallback<any>;
-}
+};
 
-export async function setupPostgresNotify(
-  client: Client,
-  subscriptions: Subscriptions,
-) {
+export async function setupPostgresNotify(client: Client, subscriptions: Subscriptions) {
   await withDbRetry(async () => {
     try {
       await client.query(`BEGIN`);

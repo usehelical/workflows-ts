@@ -2,109 +2,18 @@ import { describe, expect, it } from 'vitest';
 import { setupIntegrationTest } from './test-utils';
 import { createInstance } from '../client/runtime';
 import { defineWorkflow, WorkflowStatus } from '../core/workflow';
-import { Database } from '../core/internal/db/db';
-import { defineStep, StepDefinition } from '../core/step';
-import { runStep } from '../core/steps/run-step';
-import { serialize, deserializeError } from '../core/internal/serialization';
 import { sleep } from '../core/internal/utils/sleep';
+import {
+  checkRunInDb,
+  checkStepInDb,
+  createPromise,
+  createResolvableWorkflowStep,
+  createSimpleWorkflow,
+} from './test-helpers';
 
 const { getDb } = setupIntegrationTest();
 
 const EXECUTOR_ID = 'test-instance';
-
-function createSimpleWorkflow(
-  steps: (() => StepDefinition<unknown[], unknown>)[] = [],
-  args?: unknown[],
-  returnFn?: (stepResults: unknown[]) => unknown,
-) {
-  return async (...args: unknown[]) => {
-    const stepResults = [];
-    for (const step of steps) {
-      stepResults.push(await runStep(step()));
-    }
-    if (returnFn) {
-      return returnFn(stepResults);
-    }
-  };
-}
-
-function createResolvableWorkflowStep(promise: Promise<any>) {
-  return defineStep(
-    async () => {
-      return await promise;
-    },
-    {
-      name: 'resolvable-workflow-step',
-    },
-  );
-}
-
-function createPromise<T>() {
-  let resolvePromise: (v: T) => void;
-  let rejectPromise: (e: Error) => void;
-  const promise = new Promise<T>((resolve, reject) => {
-    resolvePromise = resolve;
-    rejectPromise = reject;
-  });
-  return { promise, resolve: resolvePromise!, reject: rejectPromise! };
-}
-
-async function checkRunInDb(
-  db: Database,
-  runId: string,
-  workflowName: string,
-  args: unknown[],
-  expectedStatus: WorkflowStatus,
-  result?: unknown,
-  error?: Error,
-) {
-  const runs = await db.selectFrom('runs').selectAll().where('id', '=', runId).executeTakeFirst();
-  expect(runs).toBeDefined();
-  expect(runs?.workflow_name).toBe(workflowName);
-  expect(runs?.inputs).toBe(JSON.stringify(args));
-  expect(runs?.status).toBe(expectedStatus);
-  expect(runs?.executor_id).toBe(EXECUTOR_ID);
-  if (result) {
-    expect(runs?.output).toBe(serialize(result));
-  } else {
-    expect(runs?.output).toBeNull();
-  }
-  if (error) {
-    expect(runs?.error).toBeDefined();
-    const deserializedError = deserializeError(runs!.error!);
-    expect(deserializedError.name).toBe(error.name);
-    expect(deserializedError.message).toBe(error.message);
-  } else {
-    expect(runs?.error).toBeNull();
-  }
-}
-
-async function checkStepInDb(
-  db: Database,
-  sequenceNumber: number,
-  result?: unknown,
-  error?: Error,
-) {
-  const steps = await db
-    .selectFrom('operations')
-    .selectAll()
-    .where('sequence_id', '=', sequenceNumber)
-    .executeTakeFirst();
-  expect(steps).toBeDefined();
-  if (result) {
-    expect(steps?.output).toBe(serialize(result));
-  } else {
-    expect(steps?.output).toBeNull();
-  }
-  if (error) {
-    expect(steps?.error).toBeDefined();
-    const deserializedError = deserializeError(steps!.error!);
-    expect(deserializedError.name).toBe(error.name);
-    expect(deserializedError.message).toBe(error.message);
-  } else {
-    expect(steps?.error).toBeNull();
-  }
-}
 
 describe('Workflows', () => {
   it('should run a successful workflow', async () => {
@@ -150,13 +59,18 @@ describe('Workflows', () => {
 
     await checkRunInDb(
       db,
-      run.id,
-      workflowName,
-      workflowArgs,
-      WorkflowStatus.SUCCESS,
-      workflowOutput,
+      {
+        id: run.id,
+        workflowName: workflowName,
+        args: workflowArgs,
+        expectedStatus: WorkflowStatus.SUCCESS,
+        result: workflowOutput,
+      },
+      EXECUTOR_ID,
     );
-    await checkStepInDb(db, 0);
+    await checkStepInDb(db, run.id, {
+      sequenceNumber: 0,
+    });
   });
 
   it('should run a failing workflow', async () => {
@@ -195,8 +109,21 @@ describe('Workflows', () => {
     const newStatus = await run.status();
     expect(newStatus).toBe(WorkflowStatus.ERROR);
 
-    await checkRunInDb(db, run.id, workflowName, [], WorkflowStatus.ERROR, undefined, error);
-    await checkStepInDb(db, 0, undefined, error);
+    await checkRunInDb(
+      db,
+      {
+        id: run.id,
+        workflowName: workflowName,
+        args: [],
+        expectedStatus: WorkflowStatus.ERROR,
+        error: error,
+      },
+      EXECUTOR_ID,
+    );
+    await checkStepInDb(db, run.id, {
+      sequenceNumber: 0,
+      error: error,
+    });
   });
 
   it('should run a workflow that returns void', async () => {
@@ -220,7 +147,16 @@ describe('Workflows', () => {
     const status = await run.status();
     expect(status).toBe(WorkflowStatus.SUCCESS);
 
-    await checkRunInDb(db, run.id, workflowName, [], WorkflowStatus.SUCCESS);
+    await checkRunInDb(
+      db,
+      {
+        id: run.id,
+        workflowName: workflowName,
+        args: [],
+        expectedStatus: WorkflowStatus.SUCCESS,
+      },
+      EXECUTOR_ID,
+    );
   });
 
   it('should handle workflow cancellation', async () => {
@@ -250,7 +186,16 @@ describe('Workflows', () => {
     const newStatus = await run.status();
     expect(newStatus).toBe(WorkflowStatus.CANCELLED);
 
-    await checkRunInDb(db, run.id, workflowName, [], WorkflowStatus.CANCELLED);
+    await checkRunInDb(
+      db,
+      {
+        id: run.id,
+        workflowName: workflowName,
+        args: [],
+        expectedStatus: WorkflowStatus.CANCELLED,
+      },
+      EXECUTOR_ID,
+    );
   });
 
   it('should handle workflow timeout', async () => {
@@ -279,7 +224,16 @@ describe('Workflows', () => {
     const newStatus = await run.status();
     expect(newStatus).toBe(WorkflowStatus.CANCELLED);
 
-    await checkRunInDb(db, run.id, workflowName, [], WorkflowStatus.CANCELLED);
+    await checkRunInDb(
+      db,
+      {
+        id: run.id,
+        workflowName: workflowName,
+        args: [],
+        expectedStatus: WorkflowStatus.CANCELLED,
+      },
+      EXECUTOR_ID,
+    );
   });
 
   it('should handle workflow deadline', async () => {
@@ -310,6 +264,15 @@ describe('Workflows', () => {
     const newStatus = await run.status();
     expect(newStatus).toBe(WorkflowStatus.CANCELLED);
 
-    await checkRunInDb(db, run.id, workflowName, [], WorkflowStatus.CANCELLED);
+    await checkRunInDb(
+      db,
+      {
+        id: run.id,
+        workflowName: workflowName,
+        args: [],
+        expectedStatus: WorkflowStatus.CANCELLED,
+      },
+      EXECUTOR_ID,
+    );
   });
 });

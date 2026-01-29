@@ -1,0 +1,119 @@
+import { Database } from '../core/internal/db/db';
+import { deserializeError, serialize } from '../core/internal/serialization';
+import { defineStep, StepDefinition } from '../core/step';
+import { runStep } from '../core/steps/run-step';
+import { WorkflowStatus } from '../core/workflow';
+
+export function createSimpleWorkflow(
+  steps: (() => StepDefinition<unknown[], unknown>)[] = [],
+  args?: unknown[],
+  returnFn?: (stepResults: unknown[]) => unknown,
+) {
+  return async (...args: unknown[]) => {
+    const stepResults = [];
+    for (const step of steps) {
+      stepResults.push(await runStep(step()));
+    }
+    if (returnFn) {
+      return returnFn(stepResults);
+    }
+  };
+}
+
+export function createPromise<T>() {
+  let resolvePromise: (v: T) => void;
+  let rejectPromise: (e: Error) => void;
+  const promise = new Promise<T>((resolve, reject) => {
+    resolvePromise = resolve;
+    rejectPromise = reject;
+  });
+  return { promise, resolve: resolvePromise!, reject: rejectPromise! };
+}
+
+export async function checkRunInDb(
+  db: Database,
+  run: {
+    id: string;
+    workflowName: string;
+    args: unknown[];
+    expectedStatus: WorkflowStatus;
+    result?: unknown;
+    error?: Error;
+  },
+  executorId?: string,
+) {
+  const runs = await db.selectFrom('runs').selectAll().where('id', '=', run.id).executeTakeFirst();
+  expect(runs).toBeDefined();
+  expect(runs?.workflow_name).toBe(run.workflowName);
+  expect(runs?.inputs).toBe(JSON.stringify(run.args));
+  expect(runs?.status).toBe(run.expectedStatus);
+  if (executorId) {
+    expect(runs?.executor_id).toBe(executorId);
+  }
+  if (run.result) {
+    expect(runs?.output).toBe(serialize(run.result));
+  } else {
+    expect(runs?.output).toBeNull();
+  }
+  if (run.error) {
+    expect(runs?.error).toBeDefined();
+    const deserializedError = deserializeError(runs!.error!);
+    expect(deserializedError.name).toBe(run.error.name);
+    expect(deserializedError.message).toBe(run.error.message);
+  } else {
+    expect(runs?.error).toBeNull();
+  }
+}
+
+export function createMockStep() {
+  return defineStep(
+    async () => {
+      return { stepResult: 'example' };
+    },
+    {
+      name: 'mock-step',
+    },
+  );
+}
+
+export function createResolvableWorkflowStep(promise: Promise<any>) {
+  return defineStep(
+    async () => {
+      return await promise;
+    },
+    {
+      name: 'resolvable-workflow-step',
+    },
+  );
+}
+
+export async function checkStepInDb(
+  db: Database,
+  runId: string,
+  step: {
+    sequenceNumber: number;
+    result?: unknown;
+    error?: Error;
+  },
+) {
+  const steps = await db
+    .selectFrom('operations')
+    .selectAll()
+    .where('sequence_id', '=', step.sequenceNumber)
+    .where('run_id', '=', runId)
+    .executeTakeFirst();
+  expect(steps).toBeDefined();
+  if (step.result) {
+    expect(steps?.output).toBe(serialize(step.result));
+  } else {
+    expect(steps?.output).toBeNull();
+  }
+  if (step.error) {
+    expect(steps?.error).toBeDefined();
+    const deserializedError = deserializeError(steps!.error!);
+    expect(deserializedError.name).toBe(step.error.name);
+    expect(deserializedError.message).toBe(step.error.message);
+  } else {
+    expect(steps?.error).toBeNull();
+  }
+}

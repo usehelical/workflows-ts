@@ -19,7 +19,6 @@ export interface QueueInstance {
 
 const POLLING_INTERVAL_MS = 1000;
 
-
 export class QueueManager {
   private readonly pollingLoop: PollingLoop;
   private readonly queues: Record<string, QueueInstance> = {};
@@ -76,4 +75,3 @@ export class QueueManager {
     this.pollingLoop.stop();
   }
 }
-
