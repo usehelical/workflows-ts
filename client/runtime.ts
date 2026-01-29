@@ -54,7 +54,7 @@ export function createInstance(props: CreateInstanceParams) {
   };
 
   setupPostgresNotify(client, {
-    runs: runEventBus.handleNotify,
+    runs: runEventBus.handleNotify.bind(runEventBus),
   });
 
   const queueManager = new QueueManager(runtimeContext);
