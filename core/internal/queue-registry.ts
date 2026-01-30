@@ -40,13 +40,10 @@ export class QueueRegistry {
       (acc, [name, entry]) => {
         const options = entry();
         acc[name] = {
-          name,
-          config: {
-            rateLimit: options.rateLimit ?? undefined,
-            workerConcurrency: options.workerConcurrency ?? undefined,
-            concurrency: options.concurrency ?? undefined,
-          },
-          availableSlots: options.workerConcurrency,
+          rateLimit: options.rateLimit ?? undefined,
+          workerConcurrency: options.workerConcurrency ?? undefined,
+          concurrency: options.concurrency ?? undefined,
+          priorityEnabled: options.priorityEnabled ?? undefined,
         };
         return acc;
       },

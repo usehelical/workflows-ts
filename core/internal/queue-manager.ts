@@ -1,20 +1,17 @@
 import { PollingLoop } from './events/polling-loop';
-import { findAndMarkStartableWorkflows } from './repository/find-and-mark-startable-workflows';
+import { getExecutableRuns } from './repository/get-executable-runs';
 import { QueueRateLimit } from '../queue';
-import { upsertRun } from './repository/upsert-run';
-import { deserialize, serialize } from './serialization';
-import { WorkflowStatus } from '../workflow';
+import { deserialize } from './serialization';
 import { executeWorkflow } from './execute-workflow';
 import { RuntimeContext } from './runtime-context';
+import { getQueuePartitions } from './repository/get-queue-partitions';
 
 export interface QueueInstance {
-  name: string;
-  config: {
-    rateLimit?: QueueRateLimit;
-    workerConcurrency?: number;
-    concurrency?: number;
-  };
-  availableSlots?: number;
+  rateLimit?: QueueRateLimit;
+  workerConcurrency?: number;
+  concurrency?: number;
+  priorityEnabled?: boolean;
+  partitioningEnabled?: boolean;
 }
 
 const POLLING_INTERVAL_MS = 1000;
@@ -28,39 +25,66 @@ export class QueueManager {
     this.queues = this.ctx.queueRegistry.getQueueInstances();
   }
 
-  private handlePoll() {
-    for (const queueName of Object.keys(this.queues)) {
-      this.dispatch(queueName);
+  private async handlePoll() {
+    for (const [queueName, queue] of Object.entries(this.queues)) {
+      await this.dispatch(queueName, queue);
     }
   }
 
-  private async dispatch(queueName: string) {
+  private async dispatch(queueName: string, queue: QueueInstance) {
     const { db, executorId } = this.ctx;
-    const runs = await findAndMarkStartableWorkflows(
-      db,
+
+    let partitions: string[] = [];
+
+    if (queue.partitioningEnabled) {
+      partitions = await getQueuePartitions(db, queueName);
+
+      for (const partition of partitions) {
+        const runs = await getExecutableRuns(db, {
+          queueName,
+          executorId,
+          workerConcurrency: queue.workerConcurrency,
+          globalConcurrency: queue.concurrency,
+          rateLimit: queue.rateLimit,
+          partitionKey: partition,
+          priorityEnabled: queue.priorityEnabled,
+        });
+        for (const run of runs) {
+          const workflow = this.ctx.workflowRegistry.getByName(run.workflowName);
+          if (!workflow) {
+            console.error(`Workflow ${run.workflowName} not found`);
+            continue;
+          }
+          await executeWorkflow(this.ctx, {
+            runId: run.runId,
+            runPath: run.path,
+            workflowName: run.workflowName,
+            fn: workflow.fn,
+            args: deserialize<unknown[]>(run.inputs ?? '[]'),
+          });
+        }
+      }
+      return;
+    }
+
+    const runs = await getExecutableRuns(db, {
       queueName,
-      this.queues[queueName].availableSlots,
-    );
+      executorId,
+      workerConcurrency: queue.workerConcurrency,
+      globalConcurrency: queue.concurrency,
+      rateLimit: queue.rateLimit,
+      priorityEnabled: queue.priorityEnabled,
+    });
     for (const run of runs) {
-      const workflow = this.ctx.workflowRegistry.getByName(run.workflow_name);
+      const workflow = this.ctx.workflowRegistry.getByName(run.workflowName);
       if (!workflow) {
-        console.error(`Workflow ${run.workflow_name} not found`);
+        console.error(`Workflow ${run.workflowName} not found`);
         continue;
       }
-
-      await upsertRun(db, {
-        runId: run.id,
-        path: run.path,
-        inputs: serialize(run.inputs),
-        executorId: executorId,
-        workflowName: run.workflow_name,
-        status: WorkflowStatus.PENDING,
-      });
-
       await executeWorkflow(this.ctx, {
-        runId: run.id,
+        runId: run.runId,
         runPath: run.path,
-        workflowName: run.workflow_name,
+        workflowName: run.workflowName,
         fn: workflow.fn,
         args: deserialize<unknown[]>(run.inputs ?? '[]'),
       });

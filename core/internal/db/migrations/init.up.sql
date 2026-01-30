@@ -6,6 +6,8 @@ create table runs (
     status text not null,
     timeout_ms bigint,
     deadline_epoch_ms bigint, 
+    started_at_epoch_ms bigint not null default (extract(epoch from now()) * 1000)::bigint,
+    priority integer not null default 0,
     inputs text,
     output text,
     error text,
@@ -30,7 +32,7 @@ create table runs (
 
 create function run_event_trigger() returns trigger as $$ 
 declare
-    payload text := new.id || '::' || new.status || '::' || new.change_id;
+    payload text := new.id || '::' || new.status || '::' || new.change_id || '::' || new.queue_name || '::' || new.queue_partition_key;
 begin 
     perform pg_notify('helical_runs', payload);
     return new;

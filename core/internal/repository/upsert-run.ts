@@ -17,7 +17,6 @@ export type UpsertRunOptions = {
   timeout?: number;
   deadline?: number;
   isRecovery?: boolean;
-  isDequeue?: boolean;
   maxRetries?: number;
   queueName?: string;
 };
@@ -37,7 +36,7 @@ export async function upsertRun(
   db: Database | Transaction,
   options: UpsertRunOptions,
 ): Promise<UpsertRunResult> {
-  const incrementAttempts = options.isRecovery || options.isDequeue ? 1 : 0;
+  const incrementAttempts = options.isRecovery ? 1 : 0;
   const initialRecoveryAttempts = options.status === 'QUEUED' ? 0 : 1;
 
   const result = await db
@@ -94,7 +93,7 @@ export async function upsertRun(
 
   // check if idempotency key matches
   const isOwner = result.idempotency_key === options.idempotencyKey;
-  const shouldExecute = isOwner || options.isRecovery || options.isDequeue;
+  const shouldExecute = isOwner || options.isRecovery;
 
   // Check max recovery attempts if authorized to execute
   if (shouldExecute) {

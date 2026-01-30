@@ -78,7 +78,49 @@ describe('Queue', () => {
       });
     });
 
-    it.todo('should queue workflow by name string');
+    it.todo('should queue workflow by name string', async () => {
+      const db = getDb();
+      const instanceId = 'instance-1';
+
+      const workflowArgs = ['okargs', { name: 'John', age: 30 }];
+      const workflowName = 'exampleWorkflow';
+      const workflowOutput = {
+        greeting: `Hello, World!`,
+        user: { name: 'John', age: 30 },
+      };
+
+      const exampleWorkflow = defineWorkflow(
+        createSimpleWorkflow([createMockStep()], workflowArgs, () => {
+          return workflowOutput;
+        }),
+      );
+
+      const exampleQueue = defineQueue();
+
+      const instance = createInstance({
+        workflows: { exampleWorkflow },
+        queues: { exampleQueue },
+        options: {
+          connectionString: 'dummy',
+          instanceId,
+        },
+      });
+
+      // @ts-expect-error - args is optional
+      const run = await instance.queueWorkflow('exampleQueue', exampleWorkflow, workflowArgs, {
+        timeout: 1000,
+      });
+
+      // check wether the workflow has been queued
+      const runStatus = await run.status();
+      expect(runStatus).toBe(WorkflowStatus.QUEUED);
+      await checkRunInDb(db, {
+        id: run.id,
+        workflowName: workflowName,
+        args: workflowArgs,
+        expectedStatus: WorkflowStatus.QUEUED,
+      });
+    });
   });
 
   describe('Cross-Instance Queue and Execute', () => {
@@ -87,7 +129,52 @@ describe('Queue', () => {
   });
 
   describe('Cancellation', () => {
-    it.todo('should cancel workflow while still in QUEUED state');
-    it.todo('should cancel workflow while in pending state');
+    it.todo('should cancel workflow while still in QUEUED state', async () => {
+      const db = getDb();
+      const instanceId = 'instance-1';
+
+      const workflowArgs = ['okargs', { name: 'John', age: 30 }];
+      const workflowName = 'exampleWorkflow';
+      const workflowOutput = {
+        greeting: `Hello, World!`,
+        user: { name: 'John', age: 30 },
+      };
+
+      const exampleWorkflow = defineWorkflow(
+        createSimpleWorkflow([createMockStep()], workflowArgs, () => {
+          return workflowOutput;
+        }),
+      );
+
+      const exampleQueue = defineQueue();
+
+      const instance = createInstance({
+        workflows: { exampleWorkflow },
+        queues: { exampleQueue },
+        options: {
+          connectionString: 'dummy',
+          instanceId,
+        },
+      });
+
+      // @ts-expect-error - args is optional
+      const run = await instance.queueWorkflow('exampleQueue', exampleWorkflow, workflowArgs, {
+        timeout: 1000,
+      });
+
+      await instance.cancelRun(run.id);
+
+      const runStatus = await run.status();
+      expect(runStatus).toBe(WorkflowStatus.CANCELLED);
+      await checkRunInDb(db, {
+        id: run.id,
+        workflowName: workflowName,
+        args: workflowArgs,
+        expectedStatus: WorkflowStatus.CANCELLED,
+      });
+      await checkStepInDb(db, run.id, {
+        sequenceNumber: 0,
+      });
+    });
   });
 });

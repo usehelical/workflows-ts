@@ -18,6 +18,7 @@ import { queueWorkflow, QueueWorkflowOptions } from './queue-workflow';
 import { QueueManager } from '../core/internal/queue-manager';
 import { setupPostgresNotify } from '../core/internal/events/setup-postgres-notify';
 import { createPgDriver } from '../core/internal/db/driver';
+import { resumeRun } from './resume-run';
 
 type CreateInstanceOptions = {
   instanceId?: string;
@@ -69,6 +70,7 @@ export function createInstance(props: CreateInstanceParams) {
       options?: RunWorkflowOptions,
     ) => runWorkflow<TArgs, TReturn>(runtimeContext, wf, args, options),
     cancelRun: async (runId: string) => cancelRun(runtimeContext, runId),
+    resumeRun: async (runId: string) => resumeRun(runtimeContext, runId),
     getRun: async (runId: string) => createRunHandle(runtimeContext, runId),
     queueWorkflow: async <TArgs extends unknown[], TReturn>(
       queue: QueueEntry | string,
@@ -78,6 +80,8 @@ export function createInstance(props: CreateInstanceParams) {
     ) => queueWorkflow<TArgs, TReturn>(runtimeContext, queue, wf, args, options),
   };
 }
+
+export type Instance = ReturnType<typeof createInstance>;
 
 export function runWithStore<TReturn>(store: ExecutionContext, callback: () => Promise<TReturn>) {
   return asyncLocalStorage.run(store, callback);

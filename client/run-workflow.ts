@@ -1,11 +1,11 @@
 import crypto from 'node:crypto';
-import { upsertRun } from '../core/internal/repository/upsert-run';
 import { serialize } from '../core/internal/serialization';
-import { WorkflowEntry, WorkflowFunction, WorkflowStatus } from '../core/workflow';
+import { WorkflowEntry, WorkflowFunction } from '../core/workflow';
 import { executeWorkflow } from '../core/internal/execute-workflow';
 import { RuntimeContext } from '../core/internal/runtime-context';
 import { WorkflowNotFoundError } from '../core/internal/errors';
 import { createRunHandle } from './run';
+import { insertPendingRun } from '../core/internal/repository/insert-pending-run';
 
 export type RunWorkflowOptions = {
   timeout?: number;
@@ -30,17 +30,16 @@ export async function runWorkflow<TArgs extends unknown[], TReturn>(
 
   const runId = crypto.randomUUID();
 
-  const { runId: id, path } = await upsertRun(db, {
+  const { path } = await insertPendingRun(db, {
     runId,
     path: [runId],
     inputs: serialize(args),
     executorId: executorId,
     workflowName: workflow.name,
-    status: WorkflowStatus.PENDING,
   });
 
   await executeWorkflow<TArgs, TReturn>(ctx, {
-    runId: id,
+    runId: runId,
     runPath: path,
     workflowName: workflow.name,
     fn: workflow.fn as WorkflowFunction<TArgs, TReturn>,
@@ -48,5 +47,5 @@ export async function runWorkflow<TArgs extends unknown[], TReturn>(
     options,
   });
 
-  return createRunHandle<TReturn>(ctx, id);
+  return createRunHandle<TReturn>(ctx, runId);
 }

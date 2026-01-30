@@ -76,7 +76,7 @@ export function createMockStep() {
   );
 }
 
-export function createResolvableWorkflowStep(promise: Promise<unknown>) {
+export function createResolvableStep(promise: Promise<unknown>) {
   return defineStep(
     async () => {
       return await promise;

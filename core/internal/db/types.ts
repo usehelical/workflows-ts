@@ -44,10 +44,12 @@ export interface Runs {
   output: string | null;
   parent_run_id: string | null;
   path: string[];
+  priority: Generated<number>;
   queue_deduplication_id: string | null;
   queue_name: string | null;
   queue_partition_key: string | null;
   recovery_attempts: Generated<Int8>;
+  started_at_epoch_ms: Generated<Int8>;
   status: string;
   timeout_ms: Int8 | null;
   updated_at: Generated<Int8>;

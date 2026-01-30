@@ -1,15 +1,18 @@
 import { QueueNotFoundError, WorkflowNotFoundError } from '../core/internal/errors';
-import { upsertRun } from '../core/internal/repository/upsert-run';
 import { RuntimeContext } from '../core/internal/runtime-context';
 import { serialize } from '../core/internal/serialization';
 import { QueueEntry } from '../core/queue';
-import { WorkflowEntry, WorkflowStatus } from '../core/workflow';
+import { WorkflowEntry } from '../core/workflow';
 import crypto from 'node:crypto';
 import { createRunHandle } from './run';
+import { enqueueRun } from '../core/internal/repository/enqueue-run';
 
 export type QueueWorkflowOptions = {
   timeout?: number;
   deadline?: number;
+  priority?: number;
+  partitionKey?: string;
+  deduplicationId?: string;
 };
 
 export async function queueWorkflow<TArgs extends unknown[], TReturn>(
@@ -34,7 +37,7 @@ export async function queueWorkflow<TArgs extends unknown[], TReturn>(
     throw new QueueNotFoundError('Queue name not specified');
   }
 
-  await upsertRun(db, {
+  await enqueueRun(db, {
     runId,
     path: [runId],
     inputs: serialize(args),
@@ -42,7 +45,6 @@ export async function queueWorkflow<TArgs extends unknown[], TReturn>(
     workflowName,
     timeout: options?.timeout,
     deadline: options?.deadline,
-    status: WorkflowStatus.QUEUED,
     queueName,
   });
 
