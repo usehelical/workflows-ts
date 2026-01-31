@@ -20,6 +20,7 @@ export async function insertPendingRun(db: Database | Transaction, options: Inse
       executor_id: options.executorId,
       workflow_name: options.workflowName,
       status: WorkflowStatus.PENDING,
+      started_at_epoch_ms: sql`(extract(epoch from now()) * 1000)::bigint`,
       created_at: sql`(extract(epoch from now()) * 1000)::bigint`,
       updated_at: sql`(extract(epoch from now()) * 1000)::bigint`,
     })

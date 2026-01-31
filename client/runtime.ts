@@ -11,7 +11,7 @@ import { recoverPendingRuns } from '../core/internal/recover-pending-runs';
 import { RuntimeContext } from '../core/internal/runtime-context';
 import { WorkflowRegistry } from '../core/internal/workflow-registry';
 import { RunEventBus } from '../core/internal/events/run-event-bus';
-import { createRunHandle } from './run';
+import { createRunHandle, Run } from './run';
 import { QueueRegistry } from '../core/internal/queue-registry';
 import { cancelRun } from './cancel-run';
 import { queueWorkflow, QueueWorkflowOptions } from './queue-workflow';
@@ -19,6 +19,8 @@ import { QueueManager } from '../core/internal/queue-manager';
 import { setupPostgresNotify } from '../core/internal/events/setup-postgres-notify';
 import { createPgDriver } from '../core/internal/db/driver';
 import { resumeRun } from './resume-run';
+import { MessageDefinition } from '../core/message';
+import { sendMessage } from './send-message';
 
 type CreateInstanceOptions = {
   instanceId?: string;
@@ -78,6 +80,7 @@ export function createInstance(props: CreateInstanceParams) {
       args?: TArgs,
       options?: QueueWorkflowOptions,
     ) => queueWorkflow<TArgs, TReturn>(runtimeContext, queue, wf, args, options),
+    sendMessage: async <T>(target: Run | string, name: MessageDefinition<T>, data: T) => sendMessage(runtimeContext, target, name, data),
   };
 }
 

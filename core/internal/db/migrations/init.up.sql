@@ -6,7 +6,7 @@ create table runs (
     status text not null,
     timeout_ms bigint,
     deadline_epoch_ms bigint, 
-    started_at_epoch_ms bigint not null default (extract(epoch from now()) * 1000)::bigint,
+    started_at_epoch_ms bigint,
     priority integer not null default 0,
     inputs text,
     output text,

@@ -22,6 +22,7 @@ export async function dequeueRun(
     .updateTable('runs')
     .set({
       status: WorkflowStatus.PENDING,
+      started_at_epoch_ms: sql`(extract(epoch from now()) * 1000)::bigint`,
       updated_at: sql`(extract(epoch from now()) * 1000)::bigint`,
       executor_id: executorId,
     })
