@@ -1,4 +1,4 @@
-import { runWithStore } from '../../client/runtime';
+import { runWithExecutionContext } from '../../client/runtime';
 import { createWorkflowStore } from '../../client/utils';
 import { WorkflowFunction } from '../workflow';
 import { OperationResult } from './operation-manager';
@@ -49,7 +49,7 @@ export async function executeWorkflow<TArgs extends unknown[], TReturn>(
 
   const executionPromise = (async () => {
     try {
-      const result = await runWithStore(runStore, async () => {
+      const result = await runWithExecutionContext(runStore, async () => {
         return await runWithTimeout(async () => {
           return await fn(...args);
         });

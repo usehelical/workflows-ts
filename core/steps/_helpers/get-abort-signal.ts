@@ -1,5 +1,5 @@
-import { getExecutionContext } from "../../internal/execution-context";
+import { getExecutionContext } from '../../internal/execution-context';
 
 export function getAbortSignal() {
-    return getExecutionContext().abortSignal;
+  return getExecutionContext().abortSignal;
 }

@@ -32,7 +32,7 @@ export class StateEventBus implements EventBus {
       if (!state) {
         return;
       }
-      this.bus.emitEvent(workflowId, state.key, state.data, state.changeId);
+      this.bus.emitEvent(workflowId, key, state, changeId);
     });
   }
 

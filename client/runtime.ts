@@ -21,6 +21,8 @@ import { createPgDriver } from '../core/internal/db/driver';
 import { resumeRun } from './resume-run';
 import { MessageDefinition } from '../core/message';
 import { sendMessage } from './send-message';
+import { StateDefinition } from '../core/state';
+import { getState } from './get-state';
 
 type CreateInstanceOptions = {
   instanceId?: string;
@@ -56,8 +58,9 @@ export function createInstance(props: CreateInstanceParams) {
     queueRegistry,
   };
 
-  setupPostgresNotify(client, {
+  const notifySetupPromise = setupPostgresNotify(client, {
     runs: runEventBus.handleNotify.bind(runEventBus),
+    state: stateEventBus.handleNotify.bind(stateEventBus),
   });
 
   const queueManager = new QueueManager(runtimeContext);
@@ -70,22 +73,41 @@ export function createInstance(props: CreateInstanceParams) {
       wf: WorkflowEntry<TArgs, TReturn> | string,
       args?: TArgs,
       options?: RunWorkflowOptions,
-    ) => runWorkflow<TArgs, TReturn>(runtimeContext, wf, args, options),
+    ) => {
+      await notifySetupPromise;
+      return runWorkflow<TArgs, TReturn>(runtimeContext, wf, args, options);
+    },
     cancelRun: async (runId: string) => cancelRun(runtimeContext, runId),
     resumeRun: async (runId: string) => resumeRun(runtimeContext, runId),
-    getRun: async (runId: string) => createRunHandle(runtimeContext, runId),
+    getRun: async (runId: string) => {
+      await notifySetupPromise;
+      return createRunHandle(runtimeContext, runId);
+    },
     queueWorkflow: async <TArgs extends unknown[], TReturn>(
       queue: QueueEntry | string,
       wf: WorkflowEntry<TArgs, TReturn> | string,
       args?: TArgs,
       options?: QueueWorkflowOptions,
-    ) => queueWorkflow<TArgs, TReturn>(runtimeContext, queue, wf, args, options),
-    sendMessage: async <T>(target: Run | string, name: MessageDefinition<T>, data: T) => sendMessage(runtimeContext, target, name, data),
+    ) => {
+      await notifySetupPromise;
+      return queueWorkflow<TArgs, TReturn>(runtimeContext, queue, wf, args, options);
+    },
+    sendMessage: async <T>(target: Run | string, name: MessageDefinition<T>, data: T) => {
+      await notifySetupPromise;
+      return sendMessage(runtimeContext, target, name, data);
+    },
+    getState: async <T>(target: Run | string, key: StateDefinition<T> | string) => {
+      await notifySetupPromise;
+      return getState<T>(runtimeContext, target, key);
+    },
   };
 }
 
 export type Instance = ReturnType<typeof createInstance>;
 
-export function runWithStore<TReturn>(store: ExecutionContext, callback: () => Promise<TReturn>) {
+export function runWithExecutionContext<TReturn>(
+  store: ExecutionContext,
+  callback: () => Promise<TReturn>,
+) {
   return asyncLocalStorage.run(store, callback);
 }

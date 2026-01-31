@@ -14,6 +14,7 @@ export interface OperationResult {
 
 export class OperationManager {
   private sequenceId = 0;
+  private lastReservedSequenceId: number | null = null;
   constructor(
     private readonly db: Database,
     private readonly runId: string,
@@ -31,7 +32,22 @@ export class OperationManager {
   }
 
   reserveSequenceId() {
-    return this.sequenceId++;
+    const reserved = this.sequenceId++;
+    this.lastReservedSequenceId = reserved;
+    return reserved;
+  }
+
+  getCurrentSequenceId() {
+    return this.sequenceId;
+  }
+
+  /**
+   * Gets the sequence ID that was most recently reserved for the current operation.
+   * This is the ID that will be (or was) recorded in the database for this operation.
+   * Returns null if no sequence ID has been reserved yet.
+   */
+  getActiveSequenceId(): number | null {
+    return this.lastReservedSequenceId;
   }
 
   async recordResult(

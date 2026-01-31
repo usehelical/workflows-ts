@@ -1,17 +1,17 @@
-import { withDbRetry } from "../internal/db/retry";
-import { MessageEventBus } from "../internal/events/message-event-bus";
-import { getExecutionContext } from "../internal/execution-context";
-import { returnOrThrowOperationResult } from "../internal/operation-manager";
-import { readAndDeleteMessage } from "../internal/repository/read-and-delete-message";
-import { deserialize, serialize, serializeError } from "../internal/serialization";
-import { MessageDefinition } from "../message";
+import { withDbRetry } from '../internal/db/retry';
+import { MessageEventBus } from '../internal/events/message-event-bus';
+import { getExecutionContext } from '../internal/execution-context';
+import { returnOrThrowOperationResult } from '../internal/operation-manager';
+import { readAndDeleteMessage } from '../internal/repository/read-and-delete-message';
+import { deserialize, serialize, serializeError } from '../internal/serialization';
+import { MessageDefinition } from '../message';
 
 const RECEIVE_MESSAGE_OPERATION_NAME = 'workflow::message::receive';
 
-class MessageNotAvailableError extends Error { }
+class MessageNotAvailableError extends Error {}
 
 export async function receiveMessage<T>(message: MessageDefinition<T> | string): Promise<T> {
-  const { runId, operationManager, messageEventBus, db } = getExecutionContext()
+  const { runId, operationManager, messageEventBus, db } = getExecutionContext();
   const messageType = typeof message === 'string' ? message : message.name;
 
   const op = operationManager.getOperationResult();
@@ -29,7 +29,12 @@ export async function receiveMessage<T>(message: MessageDefinition<T> | string):
           if (!msg) {
             throw new MessageNotAvailableError();
           }
-          await operationManager.recordResult(RECEIVE_MESSAGE_OPERATION_NAME, seqId, serialize(msg.payload), tx);
+          await operationManager.recordResult(
+            RECEIVE_MESSAGE_OPERATION_NAME,
+            seqId,
+            serialize(msg.payload),
+            tx,
+          );
           return deserialize(msg.payload!) as T;
         });
       });

@@ -3,7 +3,7 @@ import { withDbRetry } from '../db/retry';
 
 type SubscriptionCallback<T> = (data: T) => void;
 
-const CHANNELS = ['runs', 'messages', 'status'];
+const CHANNELS = ['runs', 'messages', 'state'];
 
 type Channel = (typeof CHANNELS)[number];
 
