@@ -1,4 +1,3 @@
-import { runWithExecutionContext } from '../../client/runtime';
 import { createWorkflowStore } from '../../client/utils';
 import { WorkflowFunction } from '../workflow';
 import { OperationResult } from './operation-manager';
@@ -7,7 +6,7 @@ import { serialize, serializeError } from './serialization';
 import { RunWorkflowOptions } from '../../client/run-workflow';
 import { cancelRun } from './repository/cancel-run';
 import { DeadlineError, RunCancelledError, TimeoutError } from './errors';
-import { getExecutionContext } from './execution-context';
+import { getExecutionContext, runWithExecutionContext } from './execution-context';
 import { RuntimeContext } from './runtime-context';
 
 export type ExecuteWorkflowParams<TArgs extends unknown[] = unknown[], TReturn = unknown> = {
@@ -120,7 +119,7 @@ export async function runWithTimeout<T>(fn: () => Promise<T>): Promise<T> {
     if (error instanceof TimeoutError || error instanceof DeadlineError) {
       await cancelRun(runId, db);
     }
-    await callPromise.catch(() => {});
+    await callPromise.catch(() => { });
     throw error;
   }
 }

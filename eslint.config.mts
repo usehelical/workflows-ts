@@ -11,5 +11,5 @@ export default defineConfig([
     languageOptions: { globals: globals.browser },
   },
   tseslint.configs.recommended,
-  globalIgnores(['**/_*.ts']),
+  globalIgnores(['**/_*.ts', 'dist/**/*', 'coverage/**/*']),
 ]);

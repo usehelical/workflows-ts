@@ -1,8 +1,6 @@
 import crypto from 'node:crypto';
-import { AsyncLocalStorage } from 'node:async_hooks';
 import { QueueEntry } from '../core/queue';
 import { WorkflowEntry } from '../core/workflow';
-import { ExecutionContext } from '../core/internal/execution-context';
 import { StateEventBus } from '../core/internal/events/state-event-bus';
 import { MessageEventBus } from '../core/internal/events/message-event-bus';
 import { runWorkflow, RunWorkflowOptions } from './run-workflow';
@@ -28,8 +26,6 @@ type CreateInstanceOptions = {
   instanceId?: string;
   connectionString: string;
 };
-
-export const asyncLocalStorage = new AsyncLocalStorage<ExecutionContext>();
 
 export type CreateInstanceParams = {
   workflows: Record<string, WorkflowEntry>;
@@ -61,6 +57,7 @@ export function createInstance(props: CreateInstanceParams) {
   const notifySetupPromise = setupPostgresNotify(client, {
     runs: runEventBus.handleNotify.bind(runEventBus),
     state: stateEventBus.handleNotify.bind(stateEventBus),
+    messages: messageEventBus.handleNotify.bind(messageEventBus),
   });
 
   const queueManager = new QueueManager(runtimeContext);
@@ -104,10 +101,3 @@ export function createInstance(props: CreateInstanceParams) {
 }
 
 export type Instance = ReturnType<typeof createInstance>;
-
-export function runWithExecutionContext<TReturn>(
-  store: ExecutionContext,
-  callback: () => Promise<TReturn>,
-) {
-  return asyncLocalStorage.run(store, callback);
-}
