@@ -19,7 +19,6 @@ export function getStepId(): string {
     throw new Error('getStepId() can only be called from within a step function');
   }
 
-  // Create a stable hash of runId + sequenceId
   const hash = createHash('sha256');
   hash.update(`${ctx.runId}:${sequenceId}`);
   return hash.digest('hex');

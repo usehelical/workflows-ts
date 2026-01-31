@@ -35,7 +35,6 @@ describe('State', () => {
     });
 
     const run = await instance.runWorkflow(workflow);
-
     const stateResult = await instance.getState(run, state);
     expect(stateResult).toEqual(data);
   });
