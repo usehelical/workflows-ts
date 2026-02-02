@@ -119,7 +119,7 @@ export async function runWithTimeout<T>(fn: () => Promise<T>): Promise<T> {
     if (error instanceof TimeoutError || error instanceof DeadlineError) {
       await cancelRun(runId, db);
     }
-    await callPromise.catch(() => { });
+    await callPromise.catch(() => {});
     throw error;
   }
 }

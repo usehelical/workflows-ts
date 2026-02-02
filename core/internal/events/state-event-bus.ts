@@ -2,6 +2,7 @@ import { PollingLoop } from './polling-loop';
 import { EventBus, EventBusCore } from './event-bus-core';
 import { getState } from '../repository/get-state';
 import { Database } from '../db/db';
+import { getStateBatch } from '../repository/get-state-batch';
 
 type SubscriptionCallback<T> = (data: T) => void;
 
@@ -41,10 +42,13 @@ export class StateEventBus implements EventBus {
     if (stateRetrievalRequests.length === 0) {
       return;
     }
-    // const states = []
-    // for (const state of states) {
-    //   this.bus.emitEvent(state.runId, state.key, state.data, state.changeId);
-    // }
+    const states = await getStateBatch(this.db, stateRetrievalRequests);
+    for (const state of states) {
+      if (this.bus.getEventSequence(state.runId, state.key) >= state.changeId) {
+        continue;
+      }
+      this.bus.emitEvent(state.runId, state.key, state.value, state.changeId);
+    }
   }
 
   subscribe<T>(workflowId: string, key: string, callback: SubscriptionCallback<T>) {
@@ -69,3 +73,5 @@ function getStateRetrievalRequests(keys: string[][]) {
     };
   });
 }
+
+export type StateRetrievalRequest = ReturnType<typeof getStateRetrievalRequests>;

@@ -1,6 +1,7 @@
 import { EventBus, EventBusCore } from './event-bus-core';
 import { PollingLoop } from './polling-loop';
 import { Database } from '../db/db';
+import { getMessageBatch } from '../repository/get-message-batch';
 
 type MessageEvent = undefined;
 
@@ -8,7 +9,7 @@ type MessageCallback = (event: MessageEvent) => void;
 
 const POLLING_FALLBACK_INTERVAL_MS = 10_000;
 
-export class MessageEventBus implements EventBus {
+export class MessageEventBus implements Omit<EventBus, 'emitEvent'> {
   private readonly bus: EventBusCore<MessageEvent>;
   private readonly pollingLoop: PollingLoop;
 
@@ -27,18 +28,30 @@ export class MessageEventBus implements EventBus {
   }
 
   private async handlePoll() {
-    // check if there are new messages to be consumed
+    const messageRetrievalRequests = getMessageRetrievalRequests(this.bus.getSubscriptionKeys());
+    if (messageRetrievalRequests.length === 0) {
+      return;
+    }
+    const messages = await getMessageBatch(this.db, messageRetrievalRequests);
+    for (const message of messages) {
+      this.bus.emitEvent(message.destinationRunId, message.type, undefined, 1);
+    }
   }
 
   subscribe(destinationWorkflowId: string, type: string, cb: MessageCallback) {
     return this.bus.subscribe(destinationWorkflowId, type, cb);
   }
 
-  emitEvent(destinationWorkflowId: string, type: string, count: number) {
-    this.bus.emitEvent(destinationWorkflowId, type, undefined, count);
-  }
-
   destroy() {
     this.pollingLoop.stop();
   }
 }
+
+function getMessageRetrievalRequests(subscriptionKeys: string[][]) {
+  return subscriptionKeys.map(([destinationWorkflowId, messageType]) => ({
+    destinationWorkflowId,
+    messageType,
+  }));
+}
+
+export type MessageRetrievalRequest = ReturnType<typeof getMessageRetrievalRequests>;

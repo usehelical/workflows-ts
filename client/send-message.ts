@@ -10,7 +10,7 @@ export async function sendMessage(
   name: MessageDefinition<unknown> | string,
   data?: unknown,
 ) {
-  const { db, messageEventBus } = ctx;
+  const { db } = ctx;
 
   const destinationWorkflowId = typeof target === 'string' ? target : target.id;
   const messageType = typeof name === 'string' ? name : name.name;
@@ -21,5 +21,4 @@ export async function sendMessage(
     messageType,
     data: serializedData,
   });
-  messageEventBus.emitEvent(destinationWorkflowId, messageType, 1);
 }

@@ -17,7 +17,7 @@ export interface Messages {
   destination_run_id: string;
   id: Generated<string>;
   payload: string | null;
-  type: string | null;
+  type: string;
 }
 
 export interface Operations {
@@ -49,7 +49,7 @@ export interface Runs {
   queue_name: string | null;
   queue_partition_key: string | null;
   recovery_attempts: Generated<Int8>;
-  started_at_epoch_ms: Generated<Int8>;
+  started_at_epoch_ms: Int8 | null;
   status: string;
   timeout_ms: Int8 | null;
   updated_at: Generated<Int8>;

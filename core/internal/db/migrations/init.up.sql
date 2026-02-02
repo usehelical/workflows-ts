@@ -64,7 +64,7 @@ create table operations (
 create table messages (
     id text primary key default uuid_generate_v4(),
     destination_run_id text not null,
-    type text,
+    type text not null,
     payload text,
     created_at_epoch_ms bigint not null default (extract(epoch from now()) * 1000)::bigint,
 
