@@ -1,5 +1,5 @@
 {
-  "name": "helical-workflows",
+  "name": "@usehelical/workflows",
   "version": "0.0.1",
   "description": "simple typesage durable workflows without magic",
   "main": "./dist/index.js",
@@ -35,7 +35,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "AGPL 3.0",
   "devDependencies": {
     "@electric-sql/pglite": "^0.3.15",
     "@eslint/js": "^9.39.2",
