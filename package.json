@@ -26,7 +26,7 @@
     "lint": "eslint .",
     "fmt": "prettier --write .",
     "build": "tsup",
-    "publish": "npm publish --access public",
+    "publish": "pnpm publish",
     "db:generate:types": "kysely-codegen --out-file ./core/internal/db/types.ts",
     "db:migrate": "docker-compose exec -T postgres psql -U postgres -d postgres < core/internal/db/migrations/init.up.sql",
     "db:destroy": "docker-compose exec -T postgres psql -U postgres -d postgres -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'"
