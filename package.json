@@ -1,7 +1,7 @@
 {
   "name": "helical-workflows",
   "version": "0.0.1",
-  "description": "",
+  "description": "simple typesage durable workflows without magic",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -26,7 +26,6 @@
     "lint": "eslint .",
     "fmt": "prettier --write .",
     "build": "tsup",
-    "publish": "pnpm publish",
     "db:generate:types": "kysely-codegen --out-file ./core/internal/db/types.ts",
     "db:migrate": "docker-compose exec -T postgres psql -U postgres -d postgres < core/internal/db/migrations/init.up.sql",
     "db:destroy": "docker-compose exec -T postgres psql -U postgres -d postgres -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'"
