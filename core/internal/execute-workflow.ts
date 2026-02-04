@@ -1,4 +1,4 @@
-import { createWorkflowStore } from '../../client/utils';
+import { createExecutionContext } from '../../client/utils';
 import { WorkflowFunction } from '../workflow';
 import { OperationResult } from './operation-manager';
 import { recordRunResult } from './repository/record-run-result';
@@ -32,19 +32,15 @@ export async function executeWorkflow<TArgs extends unknown[], TReturn>(
     deadline: options?.deadline,
   });
 
-  const runStore = createWorkflowStore(
+  const runStore = createExecutionContext({
+    ctx,
+    abortSignal: AbortSignal.any(
+      [abortController.signal].concat(deadline ? [AbortSignal.timeout(deadline - Date.now())] : []),
+    ),
     runId,
     runPath,
-    {
-      ...ctx,
-      abortSignal: AbortSignal.any(
-        [abortController.signal].concat(
-          deadline ? [AbortSignal.timeout(deadline - Date.now())] : [],
-        ),
-      ),
-    },
     operations,
-  );
+  });
 
   const executionPromise = (async () => {
     try {

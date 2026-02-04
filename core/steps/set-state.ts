@@ -13,12 +13,12 @@ export async function setState<T = unknown>(state: StateDefinition<T> | string, 
 
   const op = operationManager.getOperationResult();
   if (op) {
-    return returnOrThrowOperationResult<T>(op);
+    return returnOrThrowOperationResult<void>(op);
   }
 
   const seqId = operationManager.reserveSequenceId();
 
-  return await withDbRetry(async () => {
+  await withDbRetry(async () => {
     return await db.transaction().execute(async (tx) => {
       await insertState(tx, { runId, key: stateKey, value: serialize(value), sequenceId: seqId });
       await operationManager.recordResult(SET_STATE_OPERATION_NAME, seqId, null, tx);

@@ -1,31 +1,34 @@
-import { Database } from '../core/internal/db/db';
-import { MessageEventBus } from '../core/internal/events/message-event-bus';
-import { StateEventBus } from '../core/internal/events/state-event-bus';
 import { OperationManager, OperationResult } from '../core/internal/operation-manager';
 import { ExecutionContext } from '../core/internal/execution-context';
+import { RuntimeContext } from '../core/internal/runtime-context';
 
-export type WorkflowStoreDependencies = {
-  db: Database;
+type CreateExecutionContextParams = {
+  ctx: RuntimeContext;
   abortSignal: AbortSignal;
-  executorId: string;
-  messageEventBus: MessageEventBus;
-  stateEventBus: StateEventBus;
+  runId: string;
+  runPath: string[];
+  operations?: OperationResult[];
 };
 
-export function createWorkflowStore(
-  runId: string,
-  runPath: string[],
-  dependencies: WorkflowStoreDependencies,
-  operations: OperationResult[] = [],
-): ExecutionContext {
+export function createExecutionContext({
+  ctx,
+  abortSignal,
+  runId,
+  runPath,
+  operations,
+}: CreateExecutionContextParams): ExecutionContext {
   return {
     runId: runId,
     runPath: runPath,
-    executorId: dependencies.executorId,
-    abortSignal: dependencies.abortSignal,
-    operationManager: new OperationManager(dependencies.db, runId, operations),
-    messageEventBus: dependencies.messageEventBus,
-    stateEventBus: dependencies.stateEventBus,
-    db: dependencies.db,
+    executorId: ctx.executorId,
+    abortSignal: abortSignal,
+    operationManager: new OperationManager(ctx.db, runId, operations || []),
+    messageEventBus: ctx.messageEventBus,
+    stateEventBus: ctx.stateEventBus,
+    workflowRegistry: ctx.workflowRegistry,
+    runEventBus: ctx.runEventBus,
+    runRegistry: ctx.runRegistry,
+    queueRegistry: ctx.queueRegistry,
+    db: ctx.db,
   };
 }

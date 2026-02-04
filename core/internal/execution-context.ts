@@ -4,6 +4,10 @@ import { StateEventBus } from './events/state-event-bus';
 import { RunOutsideOfWorkflowError } from './errors';
 import { Database } from './db/db';
 import { AsyncLocalStorage } from 'node:async_hooks';
+import { WorkflowRegistry } from './workflow-registry';
+import { RunEventBus } from './events/run-event-bus';
+import { RunRegistry } from './run-registry';
+import { QueueRegistry } from './queue-registry';
 
 export interface ExecutionContext {
   runId: string;
@@ -14,6 +18,10 @@ export interface ExecutionContext {
   operationManager: OperationManager;
   messageEventBus: MessageEventBus;
   stateEventBus: StateEventBus;
+  workflowRegistry: WorkflowRegistry;
+  runEventBus: RunEventBus;
+  runRegistry: RunRegistry;
+  queueRegistry: QueueRegistry;
   db: Database;
 }
 
