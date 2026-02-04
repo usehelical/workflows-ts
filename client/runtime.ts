@@ -28,7 +28,8 @@ type CreateInstanceOptions = {
 };
 
 export type CreateInstanceParams = {
-  workflows: Record<string, WorkflowEntry>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  workflows: Record<string, WorkflowEntry<any, any>>;
   queues?: Record<string, QueueEntry>;
   options: CreateInstanceOptions;
 };

@@ -1,6 +1,6 @@
 {
   "name": "@usehelical/workflows",
-  "version": "0.0.1-alpha.5",
+  "version": "0.0.1-alpha.6",
   "description": "simple typesage durable workflows without magic",
   "main": "./dist/index.js",
   "type": "module",
