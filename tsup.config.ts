@@ -30,7 +30,7 @@ export default defineConfig({
     'kysely-bun-worker',
     '@tediousjs/connection-string',
     // Dev-only packages
-    'kysely-codegen'
+    'kysely-codegen',
   ],
   outExtension: () => ({ js: '.js' }),
 });
