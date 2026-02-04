@@ -15,4 +15,5 @@ export default defineConfig({
   outDir: 'dist',
   tsconfig: 'tsconfig.build.json',
   bundle: false,
+  outExtension: () => ({ js: '.js' }),
 });
