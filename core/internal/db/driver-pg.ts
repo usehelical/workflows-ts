@@ -1,6 +1,4 @@
-import { PGlite } from '@electric-sql/pglite';
 import { Kysely, PostgresDialect } from 'kysely';
-import { KyselyPGlite } from 'kysely-pglite';
 import { Pool, PoolClient } from 'pg';
 import { DB } from './types';
 import { Database } from './db';
@@ -42,22 +40,5 @@ export function createPgDriver({ connectionString }: { connectionString: string 
       },
     },
     db: new Kysely<DB>({ dialect: new PostgresDialect({ pool }) }),
-  };
-}
-
-export function createPgLiteDriver(pgLite: PGlite) {
-  const { dialect } = new KyselyPGlite(pgLite);
-  return {
-    client: {
-      listen: async (channel: string, callback: (payload: string | undefined) => void) => {
-        await pgLite.listen(channel, (payload) => {
-          callback(payload);
-        });
-      },
-      query: async (query: string) => {
-        await pgLite.query(query);
-      },
-    },
-    db: new Kysely<DB>({ dialect }),
   };
 }

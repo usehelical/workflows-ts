@@ -1,4 +1,4 @@
-import { Client } from '../db/driver';
+import { Client } from '../db/driver-pg';
 import { withDbRetry } from '../db/retry';
 
 type SubscriptionCallback<T> = (data: T) => void;

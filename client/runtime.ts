@@ -15,7 +15,7 @@ import { cancelRun } from './cancel-run';
 import { queueWorkflow, QueueWorkflowOptions } from './queue-workflow';
 import { QueueManager } from '../core/internal/queue-manager';
 import { setupPostgresNotify } from '../core/internal/events/setup-postgres-notify';
-import { createPgDriver } from '../core/internal/db/driver';
+import { createPgDriver } from '../core/internal/db/driver-pg';
 import { resumeRun } from './resume-run';
 import { MessageDefinition } from '../core/message';
 import { sendMessage } from './send-message';

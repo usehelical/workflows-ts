@@ -8,7 +8,7 @@ import {
 } from './test-setup';
 import { Kysely } from 'kysely';
 import { DB } from '../core/internal/db/types';
-import { DbDriver } from '../core/internal/db/driver';
+import { DbDriver } from '../core/internal/db/driver-pg';
 
 export function setupIntegrationTest() {
   beforeAll(async () => {

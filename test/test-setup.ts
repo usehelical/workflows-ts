@@ -5,7 +5,8 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { DB } from '../core/internal/db/types';
 import { vi } from 'vitest';
-import { createPgLiteDriver, DbDriver } from '../core/internal/db/driver';
+import { createPgLiteDriver } from '../core/internal/db/driver-pglite';
+import { DbDriver } from '../core/internal/db/driver-pg';
 
 let pgliteInstance: PGlite | null = null;
 
@@ -42,7 +43,7 @@ export function createTestDriver(): DbDriver {
 }
 
 vi.mock('../core/internal/db/driver', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../core/internal/db/driver')>();
+  const actual = await importOriginal<typeof import('../core/internal/db/driver-pglite')>();
   return {
     ...actual,
     createPgDriver: vi.fn(() => {
