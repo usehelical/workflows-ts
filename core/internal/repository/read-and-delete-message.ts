@@ -1,3 +1,4 @@
+import { sql } from 'kysely';
 import { Transaction } from '../db/db';
 
 type Message = {
@@ -11,14 +12,20 @@ export async function readAndDeleteMessage(
   runId: string,
   messageType?: string,
 ): Promise<Message | undefined> {
-  const result = await tx
-    .deleteFrom('messages')
-    .where('destination_run_id', '=', runId)
-    .$if(messageType !== undefined, (qb) => qb.where('type', '=', messageType!))
-    .orderBy('created_at_epoch_ms', 'asc')
-    .limit(1)
-    .returning(['id', 'payload', 'type'])
-    .executeTakeFirst();
+  const results = await sql<Message>`
+    DELETE FROM messages
+    WHERE id IN (
+      SELECT id FROM messages
+      WHERE destination_run_id = ${runId}
+      ${messageType !== undefined ? sql`AND type = ${messageType}` : sql``}
+      ORDER BY created_at_epoch_ms ASC
+      LIMIT 1
+    )
+    RETURNING id, payload, type
+  `.execute(tx);
+
+  const result = results.rows[0];
+
   return result
     ? {
         id: result.id,

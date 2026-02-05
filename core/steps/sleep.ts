@@ -1,28 +1,19 @@
 import { RunCancelledError } from '../internal/errors';
 import { getExecutionContext } from '../internal/execution-context';
-import { executeAndRecordOperation } from '../internal/operation-manager';
+import { withDurableDeadline } from '../internal/with-durable-deadline';
 
 const SLEEP_OPERATION_NAME = '_helical::sleep';
 
 export async function sleep(ms: number) {
-  const { operationManager, abortSignal } = getExecutionContext();
-  let endTimeMs: number;
-  const existingResult = operationManager.getOperationResult();
-  if (existingResult) {
-    endTimeMs = Number(existingResult.result);
-  } else {
-    const currentTime = Date.now();
-    endTimeMs = currentTime + ms;
-    await executeAndRecordOperation(operationManager, SLEEP_OPERATION_NAME, async () => {
-      return endTimeMs;
-    });
-  }
-  const remainingMs = endTimeMs - Date.now();
-  try {
-    await cancellableSleep(remainingMs, abortSignal);
-  } catch {
-    throw new RunCancelledError();
-  }
+  const { abortSignal } = getExecutionContext();
+  return await withDurableDeadline(ms, SLEEP_OPERATION_NAME, async (deadlineMs) => {
+    const remainingMs = deadlineMs! - Date.now();
+    try {
+      await cancellableSleep(remainingMs, abortSignal);
+    } catch {
+      throw new RunCancelledError();
+    }
+  });
 }
 
 export function cancellableSleep(ms: number, signal?: AbortSignal): Promise<void> {

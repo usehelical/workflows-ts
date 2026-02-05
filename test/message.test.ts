@@ -41,5 +41,7 @@ describe('Message', () => {
 
     const status2 = await run.status();
     expect(status2).toBe(WorkflowStatus.PENDING);
+
+    await run.result();
   });
 });
