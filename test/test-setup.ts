@@ -42,8 +42,8 @@ export function createTestDriver(): DbDriver {
   return createPgLiteDriver(pgliteInstance);
 }
 
-vi.mock('../core/internal/db/driver', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../core/internal/db/driver-pglite')>();
+vi.mock('../core/internal/db/driver-pg', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../core/internal/db/driver-pg')>();
   return {
     ...actual,
     createPgDriver: vi.fn(() => {
