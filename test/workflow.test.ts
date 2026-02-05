@@ -3,13 +3,7 @@ import { setupIntegrationTest } from './test-utils';
 import { createInstance } from '../client/runtime';
 import { defineWorkflow, WorkflowStatus } from '../core/workflow';
 import { sleep } from '../core/internal/utils/sleep';
-import {
-  checkRunInDb,
-  checkStepInDb,
-  createPromise,
-  createResolvableStep,
-  createSimpleWorkflow,
-} from './test-helpers';
+import { checkRunInDb, checkStepInDb, createPromise, createSimpleWorkflow } from './test-helpers';
 
 const { getDb } = setupIntegrationTest();
 
@@ -29,7 +23,7 @@ describe('Workflows', () => {
     };
 
     const exampleWorkflow = defineWorkflow(
-      createSimpleWorkflow([createResolvableStep(promise)], workflowArgs, () => {
+      createSimpleWorkflow([() => Promise.resolve(promise)], workflowArgs, () => {
         return workflowOutput;
       }),
     );
@@ -79,7 +73,7 @@ describe('Workflows', () => {
     const { promise, reject } = createPromise();
 
     const workflowName = 'exampleWorkflow';
-    const exampleWorkflow = defineWorkflow(createSimpleWorkflow([createResolvableStep(promise)]));
+    const exampleWorkflow = defineWorkflow(createSimpleWorkflow([() => Promise.resolve(promise)]));
 
     const instance = createInstance({
       workflows: { exampleWorkflow },
@@ -163,7 +157,7 @@ describe('Workflows', () => {
 
     const workflowName = 'exampleWorkflow';
     const { promise } = createPromise();
-    const exampleWorkflow = defineWorkflow(createSimpleWorkflow([createResolvableStep(promise)]));
+    const exampleWorkflow = defineWorkflow(createSimpleWorkflow([() => Promise.resolve(promise)]));
 
     const instance = createInstance({
       workflows: { exampleWorkflow },
@@ -199,7 +193,7 @@ describe('Workflows', () => {
     const db = getDb();
     const workflowName = 'exampleWorkflow';
     const { promise } = createPromise();
-    const exampleWorkflow = defineWorkflow(createSimpleWorkflow([createResolvableStep(promise)]));
+    const exampleWorkflow = defineWorkflow(createSimpleWorkflow([() => Promise.resolve(promise)]));
 
     const instance = createInstance({
       workflows: { exampleWorkflow },
@@ -235,7 +229,7 @@ describe('Workflows', () => {
     const db = getDb();
     const workflowName = 'exampleWorkflow';
     const { promise } = createPromise();
-    const exampleWorkflow = defineWorkflow(createSimpleWorkflow([createResolvableStep(promise)]));
+    const exampleWorkflow = defineWorkflow(createSimpleWorkflow([() => Promise.resolve(promise)]));
 
     const instance = createInstance({
       workflows: { exampleWorkflow },

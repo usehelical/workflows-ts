@@ -1,7 +1,6 @@
 import { setupIntegrationTest } from './test-utils';
 import { createInstance } from '../client/runtime';
 import { defineMessage } from '../core/message';
-import { defineStep } from '../core/step';
 import { receiveMessage } from '../core/steps/receive-message';
 import { defineWorkflow, WorkflowStatus } from '../core/workflow';
 import { createSimpleWorkflow } from './test-helpers';
@@ -19,9 +18,9 @@ describe('Message', () => {
 
     const exampleWorkflow = defineWorkflow(
       createSimpleWorkflow([
-        defineStep(async () => {
+        async () => {
           return await receiveMessage(mockMessage);
-        }),
+        },
       ]),
     );
 

@@ -1,18 +1,17 @@
 import { Database } from '../core/internal/db/db';
 import { deserializeError, serialize } from '../core/internal/serialization';
-import { defineStep, StepDefinition } from '../core/step';
 import { runStep } from '../core/steps/run-step';
 import { WorkflowStatus } from '../core/workflow';
 
 export function createSimpleWorkflow(
-  steps: (() => StepDefinition<unknown[], unknown>)[] = [],
+  steps: (() => Promise<unknown>)[] = [],
   args?: unknown[],
   returnFn?: (stepResults: unknown[]) => unknown,
 ) {
   return async () => {
     const stepResults = [];
     for (const step of steps) {
-      stepResults.push(await runStep(step()));
+      stepResults.push(await runStep(step));
     }
     if (returnFn) {
       return returnFn(stepResults);
@@ -63,28 +62,6 @@ export async function checkRunInDb(
   } else {
     expect(runs?.error).toBeNull();
   }
-}
-
-export function createMockStep() {
-  return defineStep(
-    async () => {
-      return;
-    },
-    {
-      name: 'mock-step',
-    },
-  );
-}
-
-export function createResolvableStep(promise: Promise<unknown>) {
-  return defineStep(
-    async () => {
-      return await promise;
-    },
-    {
-      name: 'resolvable-workflow-step',
-    },
-  );
 }
 
 export async function checkStepInDb(

@@ -4,7 +4,7 @@ import { createInstance } from '../client/runtime';
 import { defineWorkflow, WorkflowStatus } from '../core/workflow';
 import { defineQueue } from '../core/queue';
 import { sleep } from '../core/internal/utils/sleep';
-import { checkRunInDb, checkStepInDb, createMockStep, createSimpleWorkflow } from './test-helpers';
+import { checkRunInDb, checkStepInDb, createSimpleWorkflow } from './test-helpers';
 
 const { getDb } = setupIntegrationTest();
 
@@ -22,7 +22,7 @@ describe('Queue', () => {
       };
 
       const exampleWorkflow = defineWorkflow(
-        createSimpleWorkflow([createMockStep()], workflowArgs, () => {
+        createSimpleWorkflow([() => Promise.resolve()], workflowArgs, () => {
           return workflowOutput;
         }),
       );
@@ -90,7 +90,7 @@ describe('Queue', () => {
       };
 
       const exampleWorkflow = defineWorkflow(
-        createSimpleWorkflow([createMockStep()], workflowArgs, () => {
+        createSimpleWorkflow([() => Promise.resolve()], workflowArgs, () => {
           return workflowOutput;
         }),
       );
@@ -141,7 +141,7 @@ describe('Queue', () => {
       };
 
       const exampleWorkflow = defineWorkflow(
-        createSimpleWorkflow([createMockStep()], workflowArgs, () => {
+        createSimpleWorkflow([() => Promise.resolve()], workflowArgs, () => {
           return workflowOutput;
         }),
       );

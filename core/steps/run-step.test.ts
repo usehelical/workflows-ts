@@ -6,7 +6,7 @@ describe('executeStepWithRetries', () => {
   it('should execute successfully on first try', async () => {
     const fn = vi.fn().mockResolvedValue('success');
 
-    const result = await executeStepWithRetries('testStep', fn, [1, 2], {
+    const result = await executeStepWithRetries('testStep', () => fn(1, 2), {
       maxRetries: 3,
       retryDelay: 100,
     });
@@ -23,7 +23,7 @@ describe('executeStepWithRetries', () => {
       .mockRejectedValueOnce(new Error('Attempt 2 failed'))
       .mockResolvedValue('success on third try');
 
-    const result = await executeStepWithRetries('testStep', fn, [], {
+    const result = await executeStepWithRetries('testStep', fn, {
       maxRetries: 3,
       retryDelay: 10,
     });
@@ -44,7 +44,7 @@ describe('executeStepWithRetries', () => {
       .mockRejectedValueOnce(error3);
 
     await expect(
-      executeStepWithRetries('testStep', fn, [], {
+      executeStepWithRetries('testStep', fn, {
         maxRetries: 2,
         retryDelay: 10,
       }),
@@ -58,7 +58,7 @@ describe('executeStepWithRetries', () => {
     const fn = vi.fn().mockRejectedValue(fatalError);
 
     await expect(
-      executeStepWithRetries('testStep', fn, [], {
+      executeStepWithRetries('testStep', fn, {
         maxRetries: 5,
         retryDelay: 100,
       }),
@@ -72,7 +72,7 @@ describe('executeStepWithRetries', () => {
     const fn = vi.fn().mockRejectedValue(error);
 
     await expect(
-      executeStepWithRetries('testStep', fn, [], {
+      executeStepWithRetries('testStep', fn, {
         maxRetries: 0,
         retryDelay: 100,
       }),
@@ -89,7 +89,7 @@ describe('executeStepWithRetries', () => {
       .mockRejectedValueOnce(new Error('Attempt 2'))
       .mockResolvedValue('success');
 
-    await executeStepWithRetries('testStep', fn, [], {
+    await executeStepWithRetries('testStep', fn, {
       maxRetries: 3,
       retryDelay: 50,
       backOffRate: 2,
@@ -105,7 +105,7 @@ describe('executeStepWithRetries', () => {
     const fn = vi.fn().mockRejectedValue('string error');
 
     await expect(
-      executeStepWithRetries('testStep', fn, [], {
+      executeStepWithRetries('testStep', fn, {
         maxRetries: 0,
       }),
     ).rejects.toThrow('string error');
@@ -114,20 +114,9 @@ describe('executeStepWithRetries', () => {
   it('should use default retry config values', async () => {
     const fn = vi.fn().mockResolvedValue('success');
 
-    const result = await executeStepWithRetries('testStep', fn, [], {});
+    const result = await executeStepWithRetries('testStep', fn, {});
 
     expect(result).toBe('success');
     expect(fn).toHaveBeenCalledTimes(1);
-  });
-
-  it('should pass correct arguments to the step function', async () => {
-    const fn = vi.fn().mockResolvedValue('result');
-    const args = [42, 'test', { key: 'value' }];
-
-    await executeStepWithRetries('testStep', fn, args as [number, string, object], {
-      maxRetries: 1,
-    });
-
-    expect(fn).toHaveBeenCalledWith(42, 'test', { key: 'value' });
   });
 });

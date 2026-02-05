@@ -1,7 +1,6 @@
 import { setupIntegrationTest } from './test-utils';
 import { createInstance } from '../client/runtime';
 import { defineState } from '../core/state';
-import { defineStep } from '../core/step';
 import { setState } from '../core/steps/set-state';
 import { defineWorkflow } from '../core/workflow';
 import { createSimpleWorkflow } from './test-helpers';
@@ -21,9 +20,9 @@ describe('State', () => {
 
     const workflow = defineWorkflow(
       createSimpleWorkflow([
-        defineStep(async () => {
+        async () => {
           await setState(state, data);
-        }),
+        },
       ]),
     );
 

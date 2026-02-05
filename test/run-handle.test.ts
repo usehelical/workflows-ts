@@ -1,7 +1,7 @@
 import { setupIntegrationTest } from './test-utils';
 import { createInstance } from '../client/runtime';
 import { defineWorkflow, WorkflowStatus } from '../core/workflow';
-import { createPromise, createResolvableStep, createSimpleWorkflow } from './test-helpers';
+import { createPromise, createSimpleWorkflow } from './test-helpers';
 import { sleep } from '../core/internal/utils/sleep';
 
 setupIntegrationTest();
@@ -10,7 +10,7 @@ describe('Run Handle', () => {
   it('should get the status of a run', async () => {
     const { promise, resolve } = createPromise();
     const exampleWorkflow = defineWorkflow(
-      createSimpleWorkflow([createResolvableStep(promise)], [], () => {
+      createSimpleWorkflow([() => Promise.resolve(promise)], [], () => {
         return { greeting: 'Hello, World!' };
       }),
     );

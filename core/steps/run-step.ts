@@ -5,31 +5,41 @@ import {
 } from '../internal/errors';
 import { getExecutionContext } from '../internal/execution-context';
 import { sleep } from '../internal/utils/sleep';
-import { RetryConfig, StepDefinition, StepFunction } from '../step';
 import {
   executeAndRecordOperation,
   returnOrThrowOperationResult,
 } from '../internal/operation-manager';
 
-export async function runStep<TArgs extends unknown[], TReturn>(
-  step: StepDefinition<TArgs, TReturn>,
+export type RetryConfig = {
+  maxRetries?: number;
+  retryDelay?: number;
+  backOffRate?: number;
+};
+
+type RunStepOptions = RetryConfig & {
+  name?: string;
+};
+
+export async function runStep<TReturn>(
+  stepFn: () => Promise<TReturn>,
+  options: RunStepOptions = {},
 ) {
+  const { maxRetries, retryDelay, backOffRate } = options;
   const { operationManager } = getExecutionContext();
-  const stepName = step.options.name || step.fn.name || '<unknown>';
+  const stepName = options.name || stepFn.name || '<unknown>';
 
   const op = operationManager.getOperationResult();
   if (op) {
     return returnOrThrowOperationResult<TReturn>(op);
   }
   return await executeAndRecordOperation(operationManager, stepName, async () => {
-    return await executeStepWithRetries(stepName, step.fn, step.args, step.options);
+    return await executeStepWithRetries(stepName, stepFn, { maxRetries, retryDelay, backOffRate });
   });
 }
 
-export async function executeStepWithRetries<TArgs extends unknown[], TReturn>(
+export async function executeStepWithRetries<TReturn>(
   stepName: string,
-  fn: StepFunction<TArgs, TReturn>,
-  args: TArgs,
+  fn: () => Promise<TReturn>,
   retryConfig: RetryConfig,
 ): Promise<TReturn> {
   const maxRetries = retryConfig.maxRetries ?? 0;
@@ -40,7 +50,7 @@ export async function executeStepWithRetries<TArgs extends unknown[], TReturn>(
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      return await fn(...args);
+      return await fn();
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
       attemptErrors.push(err);
