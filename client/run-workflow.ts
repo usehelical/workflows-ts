@@ -10,6 +10,7 @@ import { insertPendingRun } from '../core/internal/repository/insert-pending-run
 export type RunWorkflowOptions = {
   timeout?: number;
   deadline?: number;
+  id?: string;
 };
 
 export async function runWorkflow<TArgs extends unknown[], TReturn>(
@@ -28,7 +29,7 @@ export async function runWorkflow<TArgs extends unknown[], TReturn>(
     throw new WorkflowNotFoundError('Workflow not found');
   }
 
-  const runId = crypto.randomUUID();
+  const runId = options.id ?? crypto.randomUUID();
 
   const { path } = await insertPendingRun(db, {
     runId,

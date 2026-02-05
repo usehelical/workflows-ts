@@ -42,7 +42,7 @@ export async function runWorkflow<TArgs extends unknown[], TReturn>(
   }
 
   const newRun = await executeAndRecordOperation(operationManager, 'runWorkflow', async () => {
-    const newRunId = crypto.randomUUID();
+    const newRunId = options.id ?? crypto.randomUUID();
     const newRun: RunWorkflowOperationResult = {
       runId: newRunId,
       runPath: [...runPath, newRunId],
