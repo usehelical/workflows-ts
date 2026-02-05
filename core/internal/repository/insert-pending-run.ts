@@ -1,5 +1,4 @@
 import { sql } from 'kysely';
-import { WorkflowStatus } from '../../workflow';
 import { Database, Transaction } from '../db/db';
 
 export type InsertRunOptions = {
@@ -19,7 +18,7 @@ export async function insertPendingRun(db: Database | Transaction, options: Inse
       inputs: options.inputs,
       executor_id: options.executorId,
       workflow_name: options.workflowName,
-      status: WorkflowStatus.PENDING,
+      status: 'pending',
       started_at_epoch_ms: sql`(extract(epoch from now()) * 1000)::bigint`,
       created_at: sql`(extract(epoch from now()) * 1000)::bigint`,
       updated_at: sql`(extract(epoch from now()) * 1000)::bigint`,

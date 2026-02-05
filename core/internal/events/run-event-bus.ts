@@ -1,4 +1,4 @@
-import { WorkflowStatus } from '../../workflow';
+import { RunStatus } from '../../workflow';
 import { EventBus, EventBusCore } from './event-bus-core';
 import { PollingLoop } from './polling-loop';
 import { getRun } from '../repository/get-run';
@@ -6,7 +6,7 @@ import { getRunBatch } from '../repository/get-run-batch';
 import { Database } from '../db/db';
 
 interface RunEvent {
-  status: WorkflowStatus;
+  status: RunStatus;
   queueName?: string;
   result?: unknown;
   error?: string;
@@ -76,7 +76,7 @@ export class RunEventBus implements Omit<EventBus, 'emitEvent'> {
     }
   }
 
-  subscribe(runId: string, status: WorkflowStatus | '*', cb: RunEventCallback) {
+  subscribe(runId: string, status: RunStatus | '*', cb: RunEventCallback) {
     return this.bus.subscribe(runId, status, cb);
   }
 

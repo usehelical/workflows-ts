@@ -1,11 +1,10 @@
-export enum WorkflowStatus {
-  PENDING = 'PENDING',
-  QUEUED = 'QUEUED',
-  SUCCESS = 'SUCCESS',
-  ERROR = 'ERROR',
-  CANCELLED = 'CANCELLED',
-  MAX_RECOVERY_ATTEMPTS_EXCEEDED = 'MAX_RECOVERY_ATTEMPTS_EXCEEDED',
-}
+export type RunStatus =
+  | 'pending'
+  | 'queued'
+  | 'success'
+  | 'error'
+  | 'cancelled'
+  | 'max_recovery_attempts_exceeded';
 
 export type WorkflowFunction<Args extends unknown[], R> = (...args: Args) => Promise<R> | R;
 

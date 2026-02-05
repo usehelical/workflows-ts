@@ -1,4 +1,4 @@
-import { WorkflowStatus } from '../../workflow';
+import { RunStatus } from '../../workflow';
 import { Database } from '../db/db';
 
 export async function getRunBatch(db: Database, runIds: string[]) {
@@ -12,7 +12,7 @@ export async function getRunBatch(db: Database, runIds: string[]) {
     input: r.inputs ?? undefined,
     output: r.output ?? undefined,
     error: r.error ?? undefined,
-    status: r.status as WorkflowStatus,
+    status: r.status as RunStatus,
     changeId: r.change_id,
     queueName: r.queue_name ?? undefined,
   }));

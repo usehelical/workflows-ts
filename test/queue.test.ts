@@ -1,7 +1,7 @@
 import { describe, it } from 'vitest';
 import { setupIntegrationTest } from './test-utils';
 import { createInstance } from '../client/runtime';
-import { defineWorkflow, WorkflowStatus } from '../core/workflow';
+import { defineWorkflow } from '../core/workflow';
 import { defineQueue } from '../core/queue';
 import { sleep } from '../core/internal/utils/sleep';
 import { checkRunInDb, checkStepInDb, createSimpleWorkflow } from './test-helpers';
@@ -44,12 +44,12 @@ describe('Queue', () => {
 
       // check wether the workflow has been queued
       const runStatus = await run.status();
-      expect(runStatus).toBe(WorkflowStatus.QUEUED);
+      expect(runStatus).toBe('queued');
       await checkRunInDb(db, {
         id: run.id,
         workflowName: workflowName,
         args: workflowArgs,
-        expectedStatus: WorkflowStatus.QUEUED,
+        expectedStatus: 'queued',
       });
 
       // spawn new instance that can take the workflow out of the queue
@@ -70,7 +70,7 @@ describe('Queue', () => {
         id: run.id,
         workflowName: workflowName,
         args: workflowArgs,
-        expectedStatus: WorkflowStatus.SUCCESS,
+        expectedStatus: 'success',
         result: workflowOutput,
       });
       await checkStepInDb(db, run.id, {
@@ -113,12 +113,12 @@ describe('Queue', () => {
 
       // check wether the workflow has been queued
       const runStatus = await run.status();
-      expect(runStatus).toBe(WorkflowStatus.QUEUED);
+      expect(runStatus).toBe('queued');
       await checkRunInDb(db, {
         id: run.id,
         workflowName: workflowName,
         args: workflowArgs,
-        expectedStatus: WorkflowStatus.QUEUED,
+        expectedStatus: 'queued',
       });
     });
   });
@@ -165,12 +165,12 @@ describe('Queue', () => {
       await instance.cancelRun(run.id);
 
       const runStatus = await run.status();
-      expect(runStatus).toBe(WorkflowStatus.CANCELLED);
+      expect(runStatus).toBe('cancelled');
       await checkRunInDb(db, {
         id: run.id,
         workflowName: workflowName,
         args: workflowArgs,
-        expectedStatus: WorkflowStatus.CANCELLED,
+        expectedStatus: 'cancelled',
       });
       await checkStepInDb(db, run.id, {
         sequenceNumber: 0,

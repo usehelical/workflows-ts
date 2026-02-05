@@ -1,4 +1,3 @@
-import { WorkflowStatus } from '../core/workflow';
 import { RunEventBus } from '../core/internal/events/run-event-bus';
 import { RunNotFoundError, RunCancelledError } from '../core/internal/errors';
 import { deserialize, deserializeError } from '../core/internal/serialization';
@@ -7,10 +6,11 @@ import { RuntimeContext } from '../core/internal/runtime-context';
 import { getRunStatus } from '../core/internal/repository/get-run-status';
 import { getRun } from '../core/internal/repository/get-run';
 import { Database } from '../core/internal/db/db';
+import { RunStatus } from '../core';
 
 export interface Run<TReturn = unknown> {
   id: string;
-  status: () => Promise<WorkflowStatus>;
+  status: () => Promise<RunStatus>;
   result: () => Promise<TReturn>;
 }
 
@@ -36,18 +36,18 @@ export function createRunHandle<TReturn = unknown>(
   };
 }
 
-async function getRunStatusFromRegistry(runEntry: RunEntry): Promise<WorkflowStatus> {
+async function getRunStatusFromRegistry(runEntry: RunEntry): Promise<RunStatus> {
   if (runEntry.store.abortSignal.aborted) {
-    return WorkflowStatus.CANCELLED;
+    return 'cancelled';
   }
   const promiseState = runEntry.getPromiseState();
   if (promiseState === 'pending') {
-    return WorkflowStatus.PENDING;
+    return 'pending';
   }
   if (promiseState === 'fulfilled') {
-    return WorkflowStatus.SUCCESS;
+    return 'success';
   }
-  return WorkflowStatus.ERROR;
+  return 'error';
 }
 
 async function getRunResult<TReturn = unknown>(id: string, runEventBus: RunEventBus, db: Database) {
@@ -56,22 +56,22 @@ async function getRunResult<TReturn = unknown>(id: string, runEventBus: RunEvent
     throw new RunNotFoundError(id);
   }
 
-  if (run.status === WorkflowStatus.CANCELLED) {
+  if (run.status === 'cancelled') {
     throw new RunCancelledError();
   }
 
-  if (run.status === WorkflowStatus.ERROR) {
+  if (run.status === 'error') {
     throw run.error ? (deserializeError(run.error) as unknown as Error) : undefined;
   }
 
   return new Promise<TReturn>((resolve, reject) => {
     const unsubscribe = runEventBus.subscribe(id, '*', async (e) => {
-      if (e.status === WorkflowStatus.CANCELLED) {
+      if (e.status === 'cancelled') {
         unsubscribe();
         reject(new RunCancelledError());
         return;
       }
-      if (e.status === WorkflowStatus.SUCCESS || e.status === WorkflowStatus.ERROR) {
+      if (e.status === 'success' || e.status === 'error') {
         unsubscribe();
         try {
           const completedRun = await getRun(db, id);
@@ -79,7 +79,7 @@ async function getRunResult<TReturn = unknown>(id: string, runEventBus: RunEvent
             reject(new RunNotFoundError(id));
             return;
           }
-          if (completedRun.status === WorkflowStatus.ERROR) {
+          if (completedRun.status === 'error') {
             reject(
               completedRun.error
                 ? (deserializeError(completedRun.error) as unknown as Error)

@@ -3,7 +3,6 @@ import { deserialize, deserializeError, serialize, serializeError } from './seri
 import { getExecutionContext } from './execution-context';
 import { RunCancelledError } from './errors';
 import { getRun } from './repository/get-run';
-import { WorkflowStatus } from '../workflow';
 import { insertOperation } from './repository/insert-operation';
 import { Database, Transaction } from './db/db';
 
@@ -137,7 +136,7 @@ async function checkCancellation() {
     throw new RunCancelledError();
   }
   const run = await withDbRetry(async () => getRun(db, runId));
-  if (run?.status === WorkflowStatus.CANCELLED) {
+  if (run?.status === 'cancelled') {
     throw new RunCancelledError();
   }
 }

@@ -1,8 +1,8 @@
-import { WorkflowStatus } from '../../workflow';
+import { RunStatus } from '../../workflow';
 import { Database } from '../db/db';
 import { RunNotFoundError } from '../errors';
 
-export async function getRunStatus(db: Database, runId: string): Promise<WorkflowStatus> {
+export async function getRunStatus(db: Database, runId: string): Promise<RunStatus> {
   const run = await db
     .selectFrom('runs')
     .select('status')
@@ -11,5 +11,5 @@ export async function getRunStatus(db: Database, runId: string): Promise<Workflo
   if (!run) {
     throw new RunNotFoundError(runId);
   }
-  return run.status as WorkflowStatus;
+  return run.status as RunStatus;
 }

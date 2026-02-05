@@ -10,8 +10,12 @@ export async function randomUUID() {
   if (existingResult) {
     return existingResult.result as string;
   } else {
-    await executeAndRecordOperation(operationManager, RANDOM_UUID_OPERATION_NAME, async () => {
-      return crypto.randomUUID();
-    });
+    return await executeAndRecordOperation(
+      operationManager,
+      RANDOM_UUID_OPERATION_NAME,
+      async () => {
+        return crypto.randomUUID();
+      },
+    );
   }
 }

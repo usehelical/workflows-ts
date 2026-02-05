@@ -1,5 +1,5 @@
 import { sql } from 'kysely';
-import { WorkflowStatus } from '../../workflow';
+import { RunStatus } from '../../workflow';
 import { Database, Transaction } from '../db/db';
 import { MaxRecoveryAttemptsExceededError } from '../errors';
 
@@ -12,7 +12,7 @@ export type UpsertRunOptions = {
   executorId: string;
   workflowName: string;
   parentRunId?: string;
-  status: WorkflowStatus;
+  status: RunStatus;
   idempotencyKey?: string;
   timeout?: number;
   deadline?: number;
@@ -28,7 +28,7 @@ export type UpsertRunResult = {
   executorId?: string;
   recoveryAttempts: number;
   idempotencyKey?: string;
-  status: WorkflowStatus;
+  status: RunStatus;
   shouldExecute: boolean;
 };
 
@@ -37,7 +37,7 @@ export async function upsertRun(
   options: UpsertRunOptions,
 ): Promise<UpsertRunResult> {
   const incrementAttempts = options.isRecovery ? 1 : 0;
-  const initialRecoveryAttempts = options.status === 'QUEUED' ? 0 : 1;
+  const initialRecoveryAttempts = options.status === 'queued' ? 0 : 1;
 
   const result = await db
     .insertInto('runs')
@@ -121,7 +121,7 @@ export async function upsertRun(
     recoveryAttempts: result.recovery_attempts as unknown as number,
     executorId: result.executor_id ?? undefined,
     idempotencyKey: result.idempotency_key ?? undefined,
-    status: result.status as WorkflowStatus,
+    status: result.status as RunStatus,
     shouldExecute: shouldExecute ?? false,
   };
 }

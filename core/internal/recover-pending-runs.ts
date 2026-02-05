@@ -1,4 +1,3 @@
-import { WorkflowStatus } from '../workflow';
 import { executeWorkflow } from './execute-workflow';
 import { getOperations } from './repository/get-operations';
 import { getPendingRuns } from './repository/get-pending-runs';
@@ -24,7 +23,7 @@ export async function recoverPendingRuns(ctx: RuntimeContext) {
         inputs: run.inputs ?? '',
         executorId: executorId,
         workflowName: run.workflowName,
-        status: WorkflowStatus.PENDING,
+        status: 'pending',
         isRecovery: true,
       });
       if (!upsertResult.shouldExecute) {

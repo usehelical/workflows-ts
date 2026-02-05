@@ -1,6 +1,6 @@
 import { setupIntegrationTest } from './test-utils';
 import { createInstance } from '../client/runtime';
-import { defineWorkflow, WorkflowStatus } from '../core/workflow';
+import { defineWorkflow } from '../core/workflow';
 import { createPromise, createSimpleWorkflow } from './test-helpers';
 import { sleep } from '../core/internal/utils/sleep';
 
@@ -22,7 +22,7 @@ describe('Run Handle', () => {
 
     const run = await instance.runWorkflow(exampleWorkflow);
     let status = await run.status();
-    expect(status).toBe(WorkflowStatus.PENDING);
+    expect(status).toBe('pending');
 
     const instance2 = createInstance({
       workflows: { exampleWorkflow },
@@ -31,19 +31,19 @@ describe('Run Handle', () => {
 
     const run2 = await instance2.getRun(run.id);
     let status2 = await run2.status();
-    expect(status2).toBe(WorkflowStatus.PENDING);
+    expect(status2).toBe('pending');
 
     resolve(undefined);
 
     await sleep(100);
 
     status = await run.status();
-    expect(status).toBe(WorkflowStatus.SUCCESS);
+    expect(status).toBe('success');
 
     await sleep(100);
 
     status2 = await run2.status();
-    expect(status2).toBe(WorkflowStatus.SUCCESS);
+    expect(status2).toBe('success');
   });
 
   it.todo('should get the result of a void run');

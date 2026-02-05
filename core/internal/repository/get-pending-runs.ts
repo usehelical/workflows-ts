@@ -1,11 +1,10 @@
-import { WorkflowStatus } from '../../workflow';
 import { Database } from '../db/db';
 
 export async function getPendingRuns(db: Database, executorId: string) {
   const pendingRuns = await db
     .selectFrom('runs')
     .select(['id', 'path', 'inputs', 'workflow_name'])
-    .where('status', '=', WorkflowStatus.PENDING)
+    .where('status', '=', 'pending')
     .where('executor_id', '=', executorId)
     .execute();
 

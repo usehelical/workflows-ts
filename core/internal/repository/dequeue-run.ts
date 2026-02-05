@@ -1,5 +1,4 @@
 import { sql } from 'kysely';
-import { WorkflowStatus } from '../../workflow';
 import { Transaction } from '../db/db';
 import { RunNotFoundError } from '../errors';
 
@@ -21,13 +20,13 @@ export async function dequeueRun(
   const result = await tx
     .updateTable('runs')
     .set({
-      status: WorkflowStatus.PENDING,
+      status: 'pending',
       started_at_epoch_ms: sql`(extract(epoch from now()) * 1000)::bigint`,
       updated_at: sql`(extract(epoch from now()) * 1000)::bigint`,
       executor_id: executorId,
     })
     .where('id', '=', runId)
-    .where('status', '=', WorkflowStatus.QUEUED)
+    .where('status', '=', 'queued')
     .returning([
       'id',
       'change_id',

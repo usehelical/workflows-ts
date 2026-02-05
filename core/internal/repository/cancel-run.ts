@@ -1,5 +1,4 @@
 import { sql } from 'kysely';
-import { WorkflowStatus } from '../../workflow';
 import { Database } from '../db/db';
 import { RunNotFoundError } from '../errors';
 import { withDbRetry } from '../db/retry';
@@ -10,18 +9,11 @@ export async function cancelRun(runId: string, db: Database) {
       const result = await tx
         .updateTable('runs')
         .set({
-          status: WorkflowStatus.CANCELLED,
+          status: 'cancelled',
           updated_at: sql`(extract(epoch from now()) * 1000)::bigint`,
         })
         .where((eb) =>
-          eb.and([
-            eb('id', '=', runId),
-            eb('status', 'not in', [
-              WorkflowStatus.CANCELLED,
-              WorkflowStatus.SUCCESS,
-              WorkflowStatus.ERROR,
-            ]),
-          ]),
+          eb.and([eb('id', '=', runId), eb('status', 'not in', ['cancelled', 'success', 'error'])]),
         )
         .returning(['change_id', 'path'])
         .executeTakeFirst();
@@ -41,11 +33,11 @@ export async function cancelRun(runId: string, db: Database) {
       await sql`
                 UPDATE runs
                 SET 
-                    status = ${WorkflowStatus.CANCELLED},
+                    status = ${'cancelled'},
                     updated_at = (extract(epoch from now()) * 1000)::bigint
                 WHERE path @> ARRAY[${runId}]::text[]
                 AND id != ${runId}
-                AND status NOT IN (${WorkflowStatus.CANCELLED}, ${WorkflowStatus.SUCCESS}, ${WorkflowStatus.ERROR})
+                AND status NOT IN (${'cancelled'}, ${'success'}, ${'error'})
             `.execute(tx);
 
       return {

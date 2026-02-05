@@ -1,4 +1,3 @@
-import { WorkflowStatus } from '../../workflow';
 import { Database } from '../db/db';
 
 export async function getQueuePartitions(db: Database, queueName: string): Promise<string[]> {
@@ -7,7 +6,7 @@ export async function getQueuePartitions(db: Database, queueName: string): Promi
     .select('queue_partition_key')
     .distinct()
     .where('queue_name', '=', queueName)
-    .where('status', '=', WorkflowStatus.QUEUED)
+    .where('status', '=', 'queued')
     .where('queue_partition_key', 'is not', null)
     .execute();
   return result.map((row) => row.queue_partition_key!);

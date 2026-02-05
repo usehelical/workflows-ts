@@ -1,5 +1,4 @@
 import { sql } from 'kysely';
-import { WorkflowStatus } from '../../workflow';
 import { Database, Transaction } from '../db/db';
 
 export type EnqueueRunOptions = {
@@ -28,7 +27,7 @@ export async function enqueueRun(db: Database | Transaction, options: EnqueueRun
       queue_deduplication_id: options.deduplicationId,
       executor_id: options.executorId,
       workflow_name: options.workflowName,
-      status: WorkflowStatus.QUEUED,
+      status: 'queued',
       recovery_attempts: options.recoveryAttempts,
       created_at: sql`(extract(epoch from now()) * 1000)::bigint`,
       updated_at: sql`(extract(epoch from now()) * 1000)::bigint`,

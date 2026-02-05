@@ -1,4 +1,4 @@
-import { WorkflowStatus } from '../../workflow';
+import { RunStatus } from '../../workflow';
 import { Database } from '../db/db';
 
 interface WorkflowResult {
@@ -6,7 +6,7 @@ interface WorkflowResult {
   input?: string;
   output?: string;
   error?: string;
-  status: WorkflowStatus;
+  status: RunStatus;
   queueName?: string;
   changeId: number;
 }
@@ -27,7 +27,7 @@ export async function getRun(db: Database, runId: string): Promise<WorkflowResul
     input: result.inputs ?? undefined,
     output: result.output ?? undefined,
     error: result.error ?? undefined,
-    status: result.status as WorkflowStatus,
+    status: result.status as RunStatus,
     changeId: result.change_id,
   };
 }

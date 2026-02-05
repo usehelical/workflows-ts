@@ -1,6 +1,5 @@
 import { sql } from 'kysely';
 import { QueueRateLimit } from '../../queue';
-import { WorkflowStatus } from '../../workflow';
 import { Database } from '../db/db';
 import { withDbRetry } from '../db/retry';
 import { DequeuedRun, dequeueRun } from './dequeue-run';
@@ -38,7 +37,7 @@ export async function getExecutableRuns(
           .selectFrom('runs')
           .select(({ fn }) => [fn.count<number>('id').as('count')])
           .where('queue_name', '=', queueName)
-          .where('status', '!=', WorkflowStatus.QUEUED)
+          .where('status', '!=', 'queued')
           .where('started_at_epoch_ms', '>', (startTimeMs - limiterPeriodMs).toString())
           .$if(partitionKey !== undefined, (qb) =>
             qb.where('queue_partition_key', '=', partitionKey!),
@@ -58,7 +57,7 @@ export async function getExecutableRuns(
           .selectFrom('runs')
           .select(['executor_id', ({ fn }) => fn.count<number>('id').as('task_count')])
           .where('queue_name', '=', queueName)
-          .where('status', '=', WorkflowStatus.PENDING)
+          .where('status', '=', 'pending')
           .$if(partitionKey !== undefined, (qb) =>
             qb.where('queue_partition_key', '=', partitionKey!),
           )
@@ -91,7 +90,7 @@ export async function getExecutableRuns(
       const workflowIds = await sql<{ id: string }>`
         SELECT id 
           FROM runs
-          WHERE status = ${WorkflowStatus.QUEUED}
+          WHERE status = ${'queued'}
           AND queue_name = ${queueName}
           ${partitionKey !== undefined ? sql`AND queue_partition_key = ${partitionKey}` : sql``}
         ${priorityEnabled ? sql`ORDER BY priority ASC, created_at ASC` : sql`ORDER BY created_at ASC`}

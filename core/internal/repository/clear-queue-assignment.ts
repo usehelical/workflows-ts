@@ -1,4 +1,3 @@
-import { WorkflowStatus } from '../../workflow';
 import { Database } from '../db/db';
 
 export async function clearQueueAssignment(db: Database, runId: string) {
@@ -12,6 +11,6 @@ export async function clearQueueAssignment(db: Database, runId: string) {
     })
     .where('id', '=', runId)
     .where('queue_name', 'is not', null)
-    .where('status', '=', WorkflowStatus.QUEUED)
+    .where('status', '=', 'queued')
     .execute();
 }

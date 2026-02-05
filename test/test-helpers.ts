@@ -1,7 +1,7 @@
 import { Database } from '../core/internal/db/db';
 import { deserializeError, serialize } from '../core/internal/serialization';
 import { runStep } from '../core/steps/run-step';
-import { WorkflowStatus } from '../core/workflow';
+import { RunStatus } from '../core/workflow';
 
 export function createSimpleWorkflow(
   steps: (() => Promise<unknown>)[] = [],
@@ -35,7 +35,7 @@ export async function checkRunInDb(
     id: string;
     workflowName: string;
     args: unknown[];
-    expectedStatus: WorkflowStatus;
+    expectedStatus: RunStatus;
     result?: unknown;
     error?: Error;
   },

@@ -1,5 +1,4 @@
 import { sql } from 'kysely';
-import { WorkflowStatus } from '../../workflow';
 import { Database, Transaction } from '../db/db';
 import { RunNotFoundError } from '../errors';
 
@@ -9,7 +8,7 @@ export async function resumeRun(db: Database | Transaction, runId: string) {
   const result = await db
     .updateTable('runs')
     .set({
-      status: WorkflowStatus.QUEUED,
+      status: 'queued',
       queue_name: INTERNAL_QUEUE_NAME,
       deadline_epoch_ms: null,
       timeout_ms: null,
@@ -18,7 +17,7 @@ export async function resumeRun(db: Database | Transaction, runId: string) {
       updated_at: sql`(extract(epoch from now()) * 1000)::bigint`,
     })
     .where('id', '=', runId)
-    .where('status', '=', WorkflowStatus.PENDING)
+    .where('status', '=', 'pending')
     .execute();
 
   if (!result) {

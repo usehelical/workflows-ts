@@ -1,5 +1,4 @@
 import { sql } from 'kysely';
-import { WorkflowStatus } from '../../workflow';
 import { Database } from '../db/db';
 
 type RunResult = {
@@ -13,7 +12,7 @@ export async function recordRunResult(db: Database, runId: string, result: RunRe
     .set({
       output: result.result,
       error: result.error,
-      status: result.error ? WorkflowStatus.ERROR : WorkflowStatus.SUCCESS,
+      status: result.error ? 'error' : 'success',
       updated_at: sql`(extract(epoch from now()) * 1000)::bigint`,
     })
     .where('id', '=', runId)
