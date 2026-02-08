@@ -12,6 +12,7 @@ export type QueueWorkflowOptions = {
   deadline?: number;
   priority?: number;
   partitionKey?: string;
+  id?: string;
   deduplicationId?: string;
 };
 
@@ -24,7 +25,7 @@ export async function queueWorkflow<TArgs extends unknown[], TReturn>(
 ) {
   const { db, executorId, workflowRegistry, queueRegistry } = ctx;
 
-  const runId = crypto.randomUUID();
+  const runId = options?.id ?? crypto.randomUUID();
 
   const workflowName =
     typeof wf === 'string' ? wf : workflowRegistry.getByWorkflowDefinition(wf)?.name;

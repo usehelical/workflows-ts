@@ -6,7 +6,7 @@ import { Run } from './run';
 import { deserialize } from '../core/internal/serialization';
 import { StateEventBus } from '../core/internal/events/state-event-bus';
 
-class StateNotAvailableError extends Error {}
+export class StateNotAvailableError extends Error {}
 
 export async function getState<T>(
   ctx: RuntimeContext,
@@ -37,7 +37,11 @@ export async function getState<T>(
   }
 }
 
-async function waitForStateNotification(stateEventBus: StateEventBus, runId: string, key: string) {
+export async function waitForStateNotification(
+  stateEventBus: StateEventBus,
+  runId: string,
+  key: string,
+) {
   return new Promise((resolve) => {
     const unsubscribe = stateEventBus.subscribe(runId, key, (state) => {
       unsubscribe();
