@@ -92,20 +92,6 @@ export class SerializationError extends Error {
   }
 }
 
-export class MaxRecoveryAttemptsExceededError extends Error {
-  constructor(runId: string, maxAttempts: number) {
-    super(`Max recovery attempts exceeded for run "${runId}" after ${maxAttempts + 1} attempts`);
-    this.name = ErrorType.MAX_RECOVERY_ATTEMPTS_EXCEEDED;
-  }
-}
-
-export class WorkflowNotFoundError extends Error {
-  constructor(workflowName: string) {
-    super(`Workflow "${workflowName}" not found`);
-    this.name = ErrorType.WORKFLOW_NOT_FOUND;
-  }
-}
-
 export class TimeoutError extends Error {
   constructor(message: string) {
     super(message);
@@ -132,12 +118,5 @@ export class RunNotCancellableError extends Error {
     super(message);
     this.name = ErrorType.RUN_NOT_CANCELLABLE;
     this.message = message;
-  }
-}
-
-export class QueueNotFoundError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = ErrorType.QUEUE_NOT_FOUND;
   }
 }

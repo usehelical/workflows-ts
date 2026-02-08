@@ -1,7 +1,7 @@
 import { createRunHandle } from '../../client/run';
 import { RunWorkflowOptions } from '../../client/run-workflow';
 import { withDbRetry } from '../internal/db/retry';
-import { WorkflowNotFoundError } from '../internal/errors';
+import { WorkflowNotFoundError } from '../../client/errors';
 import { executeWorkflow } from '../internal/execute-workflow';
 import { getExecutionContext } from '../internal/execution-context';
 import { executeAndRecordOperation } from '../internal/operation-manager';

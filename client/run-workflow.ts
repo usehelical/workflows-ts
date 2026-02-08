@@ -3,7 +3,7 @@ import { serialize } from '../core/internal/serialization';
 import { WorkflowEntry, WorkflowFunction } from '../core/workflow';
 import { executeWorkflow } from '../core/internal/execute-workflow';
 import { RuntimeContext } from '../core/internal/runtime-context';
-import { WorkflowNotFoundError } from '../core/internal/errors';
+import { WorkflowNotFoundError } from './errors';
 import { createRunHandle } from './run';
 import { insertPendingRun } from '../core/internal/repository/insert-pending-run';
 

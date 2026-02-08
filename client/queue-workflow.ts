@@ -1,4 +1,4 @@
-import { QueueNotFoundError, WorkflowNotFoundError } from '../core/internal/errors';
+import { QueueNotFoundError, WorkflowNotFoundError } from './errors';
 import { RuntimeContext } from '../core/internal/runtime-context';
 import { serialize } from '../core/internal/serialization';
 import { QueueEntry } from '../core/queue';

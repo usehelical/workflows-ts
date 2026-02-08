@@ -5,7 +5,8 @@ import { recordRunResult } from './repository/record-run-result';
 import { serialize, serializeError } from './serialization';
 import { RunWorkflowOptions } from '../../client/run-workflow';
 import { cancelRun } from './repository/cancel-run';
-import { DeadlineError, RunCancelledError, TimeoutError } from './errors';
+import { DeadlineError, RunCancelledError } from './errors';
+import { TimeoutError } from '../../client/errors';
 import { getExecutionContext, runWithExecutionContext } from './execution-context';
 import { RuntimeContext } from './runtime-context';
 

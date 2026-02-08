@@ -1,7 +1,7 @@
 import { sql } from 'kysely';
 import { RunStatus } from '../../workflow';
 import { Database, Transaction } from '../db/db';
-import { MaxRecoveryAttemptsExceededError } from '../errors';
+import { MaxRecoveryAttemptsExceededError } from '../../../client/errors';
 
 const DEFAULT_MAX_RETRIES = 10;
 
