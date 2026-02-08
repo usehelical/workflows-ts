@@ -21,6 +21,8 @@ import { MessageDefinition } from '../core/message';
 import { sendMessage } from './send-message';
 import { StateDefinition } from '../core/state';
 import { getState } from './get-state';
+import { getRunStatus } from './get-run-status';
+import { waitForRunResult } from './wait-for-run-result';
 
 type CreateInstanceOptions = {
   instanceId?: string;
@@ -81,6 +83,9 @@ export function createInstance(props: CreateInstanceParams) {
       await notifySetupPromise;
       return createRunHandle(runtimeContext, runId);
     },
+    getRunStatus: async (runId: string) => getRunStatus(runtimeContext, runId),
+    waitForRunResult: async <TReturn>(runId: string) =>
+      waitForRunResult<TReturn>(runtimeContext, runId),
     queueWorkflow: async <TArgs extends unknown[], TReturn>(
       queue: QueueEntry | string,
       wf: WorkflowEntry<TArgs, TReturn> | string,

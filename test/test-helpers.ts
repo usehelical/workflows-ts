@@ -3,12 +3,12 @@ import { deserializeError, serialize } from '../core/internal/serialization';
 import { runStep } from '../core/steps/run-step';
 import { RunStatus } from '../core/workflow';
 
-export function createSimpleWorkflow(
+export function createSimpleWorkflow<TReturn = unknown>(
   steps: (() => Promise<unknown>)[] = [],
   args?: unknown[],
-  returnFn?: (stepResults: unknown[]) => unknown,
+  returnFn?: (stepResults: unknown[]) => TReturn,
 ) {
-  return async () => {
+  return async (): Promise<TReturn> => {
     const stepResults = [];
     for (const step of steps) {
       stepResults.push(await runStep(step));
@@ -16,6 +16,8 @@ export function createSimpleWorkflow(
     if (returnFn) {
       return returnFn(stepResults);
     }
+    // Return last step result if no returnFn provided
+    return stepResults[stepResults.length - 1] as TReturn;
   };
 }
 

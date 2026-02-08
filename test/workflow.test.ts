@@ -39,18 +39,20 @@ describe('Workflows', () => {
     // @ts-expect-error - args is optional
     const run = await instance.runWorkflow(exampleWorkflow, workflowArgs);
 
-    const status = await run.status();
+    const status = await run.getStatus();
 
     expect(status).toBe('pending');
 
     resolve(undefined);
 
-    const result = await run.result();
+    const result = await run.waitForResult();
 
-    const newStatus = await run.status();
+    const newStatus = await run.getStatus();
     expect(newStatus).toBe('success');
-
-    expect(result).toEqual(workflowOutput);
+    if ('error' in result) {
+      throw result.error;
+    }
+    expect(result.data).toEqual(workflowOutput);
 
     await checkRunInDb(
       db,
@@ -85,21 +87,20 @@ describe('Workflows', () => {
 
     const run = await instance.runWorkflow(exampleWorkflow);
 
-    const status = await run.status();
+    const status = await run.getStatus();
 
     expect(status).toBe('pending');
 
     const error = new Error('Test error');
     reject(error);
 
-    try {
-      await run.result();
-      throw new Error('Expected error to be thrown');
-    } catch (e) {
-      expect((e as Error).message).toBe(error.message);
+    const result = await run.waitForResult();
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toEqual(error);
     }
 
-    const newStatus = await run.status();
+    const newStatus = await run.getStatus();
     expect(newStatus).toBe('error');
 
     await checkRunInDb(
@@ -123,7 +124,7 @@ describe('Workflows', () => {
     const db = getDb();
 
     const workflowName = 'exampleWorkflow';
-    const exampleWorkflow = defineWorkflow(createSimpleWorkflow([]));
+    const exampleWorkflow = defineWorkflow(createSimpleWorkflow<void>([]));
 
     const instance = createInstance({
       workflows: { exampleWorkflow },
@@ -135,9 +136,9 @@ describe('Workflows', () => {
 
     const run = await instance.runWorkflow(exampleWorkflow);
 
-    const result = await run.result();
-    expect(result).toBeUndefined();
-    const status = await run.status();
+    const result = await run.waitForResult();
+    expect(result.success).toBe(true);
+    const status = await run.getStatus();
     expect(status).toBe('success');
 
     await checkRunInDb(
@@ -169,12 +170,12 @@ describe('Workflows', () => {
 
     const run = await instance.runWorkflow(exampleWorkflow);
 
-    const status = await run.status();
+    const status = await run.getStatus();
     expect(status).toBe('pending');
 
     await instance.cancelRun(run.id);
 
-    const newStatus = await run.status();
+    const newStatus = await run.getStatus();
     expect(newStatus).toBe('cancelled');
 
     await checkRunInDb(
@@ -193,7 +194,9 @@ describe('Workflows', () => {
     const db = getDb();
     const workflowName = 'exampleWorkflow';
     const { promise } = createPromise();
-    const exampleWorkflow = defineWorkflow(createSimpleWorkflow([() => Promise.resolve(promise)]));
+    const exampleWorkflow = defineWorkflow(
+      createSimpleWorkflow<void>([() => Promise.resolve(promise)]),
+    );
 
     const instance = createInstance({
       workflows: { exampleWorkflow },
@@ -205,12 +208,12 @@ describe('Workflows', () => {
 
     const run = await instance.runWorkflow(exampleWorkflow, undefined, { timeout: 100 });
 
-    const status = await run.status();
+    const status = await run.getStatus();
     expect(status).toBe('pending');
 
     await sleep(101);
 
-    const newStatus = await run.status();
+    const newStatus = await run.getStatus();
     expect(newStatus).toBe('cancelled');
 
     await checkRunInDb(
@@ -243,12 +246,12 @@ describe('Workflows', () => {
       deadline: Date.now() + 100,
     });
 
-    const status = await run.status();
+    const status = await run.getStatus();
     expect(status).toBe('pending');
 
     await sleep(101);
 
-    const newStatus = await run.status();
+    const newStatus = await run.getStatus();
     expect(newStatus).toBe('cancelled');
 
     await checkRunInDb(

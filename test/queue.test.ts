@@ -43,7 +43,7 @@ describe('Queue', () => {
       });
 
       // check wether the workflow has been queued
-      const runStatus = await run.status();
+      const runStatus = await run.getStatus();
       expect(runStatus).toBe('queued');
       await checkRunInDb(db, {
         id: run.id,
@@ -112,7 +112,7 @@ describe('Queue', () => {
       });
 
       // check wether the workflow has been queued
-      const runStatus = await run.status();
+      const runStatus = await run.getStatus();
       expect(runStatus).toBe('queued');
       await checkRunInDb(db, {
         id: run.id,
@@ -164,7 +164,7 @@ describe('Queue', () => {
 
       await instance.cancelRun(run.id);
 
-      const runStatus = await run.status();
+      const runStatus = await run.getStatus();
       expect(runStatus).toBe('cancelled');
       await checkRunInDb(db, {
         id: run.id,

@@ -14,7 +14,7 @@ interface RunEvent {
 
 type RunEventCallback = (e: RunEvent) => void;
 
-const POLLING_FALLBACK_INTERVAL_MS = 10_000;
+const POLLING_FALLBACK_INTERVAL_MS = 100; // Changed from 10_000 for testing
 
 export class RunEventBus implements Omit<EventBus, 'emitEvent'> {
   private readonly bus: EventBusCore<RunEvent>;

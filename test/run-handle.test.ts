@@ -21,7 +21,7 @@ describe('Run Handle', () => {
     });
 
     const run = await instance.runWorkflow(exampleWorkflow);
-    let status = await run.status();
+    let status = await run.getStatus();
     expect(status).toBe('pending');
 
     const instance2 = createInstance({
@@ -30,19 +30,19 @@ describe('Run Handle', () => {
     });
 
     const run2 = await instance2.getRun(run.id);
-    let status2 = await run2.status();
+    let status2 = await run2.getStatus();
     expect(status2).toBe('pending');
 
     resolve(undefined);
 
     await sleep(100);
 
-    status = await run.status();
+    status = await run.getStatus();
     expect(status).toBe('success');
 
     await sleep(100);
 
-    status2 = await run2.status();
+    status2 = await run2.getStatus();
     expect(status2).toBe('success');
   });
 
