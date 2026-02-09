@@ -1,4 +1,4 @@
-import { WorkflowDefinition, WorkflowEntry } from '../workflow';
+import { WorkflowDefinition, WorkflowEntry } from '../../workflow';
 
 export class WorkflowRegistry {
   private readonly workflows: Record<string, WorkflowEntry> = {};

@@ -1,10 +1,10 @@
-import { withDbRetry } from '../core/internal/db/retry';
-import { RuntimeContext } from '../core/internal/runtime-context';
-import { StateDefinition } from '../core/state';
-import { getState as getStateRepository } from '../core/internal/repository/get-state';
-import { Run } from './run';
-import { deserialize } from '../core/internal/serialization';
-import { StateEventBus } from '../core/internal/events/state-event-bus';
+import { withDbRetry } from './db/retry';
+import { RuntimeContext } from './context/runtime-context';
+import { StateDefinition } from '../state';
+import { getState as getStateRepository } from './repository/get-state';
+import { Run } from '../../client/run';
+import { deserialize } from './utils/serialization';
+import { StateEventBus } from './events/state-event-bus';
 
 export class StateNotAvailableError extends Error {}
 

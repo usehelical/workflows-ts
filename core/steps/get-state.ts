@@ -1,10 +1,10 @@
 import { Run } from '../../client/run';
 import { StateDefinition } from '../state';
 import { getState as getStateFromDb } from '../internal/repository/get-state';
-import { getExecutionContext } from '../internal/execution-context';
-import { returnOrThrowOperationResult } from '../internal/operation-manager';
-import { deserialize, serializeError } from '../internal/serialization';
-import { StateNotAvailableError, waitForStateNotification } from '../../client/get-state';
+import { getExecutionContext } from '../internal/context/execution-context';
+import { returnOrThrowOperationResult } from '../internal/context/operation-manager';
+import { deserialize, serializeError } from '../internal/utils/serialization';
+import { StateNotAvailableError, waitForStateNotification } from '../internal/get-state';
 import { withDbRetry } from '../internal/db/retry';
 
 export async function getState<T = unknown>(

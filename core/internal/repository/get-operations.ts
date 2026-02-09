@@ -1,5 +1,5 @@
 import { Database } from '../db/db';
-import { OperationResult } from '../operation-manager';
+import { OperationResult } from '../context/operation-manager';
 
 export async function getOperations(db: Database, runId: string): Promise<OperationResult[]> {
   const results = await db

@@ -6,6 +6,13 @@ export type RunStatus =
   | 'cancelled'
   | 'max_recovery_attempts_exceeded';
 
+export const TERMINAL_STATES: RunStatus[] = [
+  'success',
+  'error',
+  'cancelled',
+  'max_recovery_attempts_exceeded',
+];
+
 export type WorkflowFunction<Args extends unknown[], R> = (...args: Args) => Promise<R> | R;
 
 export type WorkflowDefinition<TArgs extends unknown[] = unknown[], TReturn = unknown> = {

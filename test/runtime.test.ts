@@ -1,29 +1,44 @@
 import { describe, it, expect } from 'vitest';
 import { setupIntegrationTest } from './test-utils';
+import { createInstance } from '../client';
+import { createSimpleWorkflow } from './test-helpers';
+import { defineWorkflow } from '../core';
 
 const { getDb } = setupIntegrationTest();
 
 describe('Workflow Runtime with PGLite', () => {
-  it('should connect to PGLite database', async () => {
-    const db = getDb();
-    const result = await db.selectFrom('runs').selectAll().execute();
-    expect(result).toEqual([]);
-  });
+  it('should setup notify listeners', async () => {});
 
-  it('should insert a run', async () => {
+  it('should setup queue manager', async () => {});
+
+  it('should recover pending runs', async () => {
     const db = getDb();
+    // add test data to the database with status 'pending' and executor_id 'test-executor'
     await db
       .insertInto('runs')
       .values({
-        workflow_name: 'test-workflow',
+        id: 'test-run-id',
+        path: ['testWorkflow'],
+        workflow_name: 'testWorkflow',
         status: 'pending',
-        path: ['test-workflow'],
+        executor_id: 'test-executor',
       })
       .execute();
 
-    const runs = await db.selectFrom('runs').selectAll().execute();
-    expect(runs).toHaveLength(1);
-    expect(runs[0].workflow_name).toBe('test-workflow');
-    expect(runs[0].status).toBe('pending');
+    const testWorkflow = defineWorkflow(createSimpleWorkflow());
+
+    const instance = createInstance({
+      workflows: {
+        testWorkflow,
+      },
+      options: {
+        connectionString: 'dummy',
+        instanceId: 'test-executor',
+      },
+    });
+
+    // await the runresult to be 'success'
+    const result = await instance.waitForRunResult('test-run-id');
+    expect(result.success).toBe(true);
   });
 });

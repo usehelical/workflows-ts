@@ -1,6 +1,6 @@
-import { OperationManager, OperationResult } from '../core/internal/operation-manager';
-import { ExecutionContext } from '../core/internal/execution-context';
-import { RuntimeContext } from '../core/internal/runtime-context';
+import { OperationManager, OperationResult } from '../core/internal/context/operation-manager';
+import { ExecutionContext } from '../core/internal/context/execution-context';
+import { RuntimeContext } from '../core/internal/context/runtime-context';
 
 type CreateExecutionContextParams = {
   ctx: RuntimeContext;

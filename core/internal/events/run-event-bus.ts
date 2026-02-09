@@ -4,6 +4,7 @@ import { PollingLoop } from './polling-loop';
 import { getRun } from '../repository/get-run';
 import { getRunBatch } from '../repository/get-run-batch';
 import { Database } from '../db/db';
+import { withDbRetry } from '../db/retry';
 
 interface RunEvent {
   status: RunStatus;
@@ -20,13 +21,16 @@ export class RunEventBus implements Omit<EventBus, 'emitEvent'> {
   private readonly bus: EventBusCore<RunEvent>;
   private readonly pollingLoop: PollingLoop;
 
-  constructor(private readonly db: Database) {
-    this.pollingLoop = new PollingLoop(POLLING_FALLBACK_INTERVAL_MS, this.handlePoll.bind(this));
+  constructor(
+    private readonly db: Database,
+    pollingFallbackIntervalMs: number = POLLING_FALLBACK_INTERVAL_MS,
+  ) {
+    this.pollingLoop = new PollingLoop(pollingFallbackIntervalMs, this.handlePoll.bind(this));
     this.bus = new EventBusCore({ allowWildcardSubscriptions: true }, this.pollingLoop);
     this.pollingLoop.start();
   }
 
-  handleNotify(payload: string) {
+  async handleNotify(payload: string) {
     const [runId, status, changeIdString] = payload.split('::');
     const changeId = Number(changeIdString);
     if (
@@ -35,7 +39,8 @@ export class RunEventBus implements Omit<EventBus, 'emitEvent'> {
     ) {
       return;
     }
-    getRun(this.db, runId).then((run) => {
+    try {
+      const run = await withDbRetry(async () => await getRun(this.db, runId));
       if (!run) {
         return;
       }
@@ -50,7 +55,10 @@ export class RunEventBus implements Omit<EventBus, 'emitEvent'> {
         },
         changeId,
       );
-    });
+    } catch (error) {
+      console.error('Error handling notify for run:', error);
+      return;
+    }
   }
 
   private async handlePoll() {
@@ -60,19 +68,23 @@ export class RunEventBus implements Omit<EventBus, 'emitEvent'> {
     if (workflowIds.length === 0) {
       return;
     }
-    const runs = await getRunBatch(this.db, workflowIds);
-    for (const run of runs) {
-      this.bus.emitEvent(
-        run.id,
-        run.status,
-        {
-          status: run.status,
-          queueName: run.queueName,
-          result: run.output,
-          error: run.error,
-        },
-        run.changeId,
-      );
+    try {
+      const runs = await withDbRetry(async () => await getRunBatch(this.db, workflowIds));
+      for (const run of runs) {
+        this.bus.emitEvent(
+          run.id,
+          run.status,
+          {
+            status: run.status,
+            queueName: run.queueName,
+            result: run.output,
+            error: run.error,
+          },
+          run.changeId,
+        );
+      }
+    } catch (error) {
+      console.error('Error polling runs:', error);
     }
   }
 

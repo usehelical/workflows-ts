@@ -4,6 +4,7 @@ import { createInstance } from '../client/runtime';
 import { defineWorkflow } from '../core/workflow';
 import { sleep } from '../core/internal/utils/sleep';
 import { checkRunInDb, checkStepInDb, createPromise, createSimpleWorkflow } from './test-helpers';
+import { RunDeadlineExceededError, RunTimedOutError } from '../core/internal/errors';
 
 const { getDb } = setupIntegrationTest();
 
@@ -214,7 +215,7 @@ describe('Workflows', () => {
     await sleep(101);
 
     const newStatus = await run.getStatus();
-    expect(newStatus).toBe('cancelled');
+    expect(newStatus).toBe('error');
 
     await checkRunInDb(
       db,
@@ -222,7 +223,8 @@ describe('Workflows', () => {
         id: run.id,
         workflowName: workflowName,
         args: [],
-        expectedStatus: 'cancelled',
+        expectedStatus: 'error',
+        error: new RunTimedOutError(),
       },
       EXECUTOR_ID,
     );
@@ -252,7 +254,7 @@ describe('Workflows', () => {
     await sleep(101);
 
     const newStatus = await run.getStatus();
-    expect(newStatus).toBe('cancelled');
+    expect(newStatus).toBe('error');
 
     await checkRunInDb(
       db,
@@ -260,7 +262,8 @@ describe('Workflows', () => {
         id: run.id,
         workflowName: workflowName,
         args: [],
-        expectedStatus: 'cancelled',
+        expectedStatus: 'error',
+        error: new RunDeadlineExceededError(),
       },
       EXECUTOR_ID,
     );

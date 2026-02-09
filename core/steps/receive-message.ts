@@ -1,17 +1,16 @@
 import { withDbRetry } from '../internal/db/retry';
-import { TimeoutError } from '../internal/errors';
+import { OperationTimedOutError } from '../internal/errors';
 import { MessageEventBus } from '../internal/events/message-event-bus';
-import { getExecutionContext } from '../internal/execution-context';
-import { returnOrThrowOperationResult } from '../internal/operation-manager';
+import { getExecutionContext } from '../internal/context/execution-context';
+import { returnOrThrowOperationResult } from '../internal/context/operation-manager';
 import { readAndDeleteMessage } from '../internal/repository/read-and-delete-message';
-import { deserialize, serialize, serializeError } from '../internal/serialization';
+import { deserialize, serialize, serializeError } from '../internal/utils/serialization';
 import { withDurableDeadline } from '../internal/with-durable-deadline';
 import { MessageDefinition } from '../message';
 
-const RECEIVE_MESSAGE_OPERATION_NAME = 'workflow::message::receive';
+const RECEIVE_MESSAGE_OPERATION_NAME = 'receiveMessage';
 
-const RECEIVE_MESSAGE_DURABLE_DEADLINE_OPERATION_NAME =
-  'workflow::message::receive::durable-deadline';
+const RECEIVE_MESSAGE_DURABLE_DEADLINE_OPERATION_NAME = 'receiveMessageDurableDeadline';
 
 class MessageNotAvailableError extends Error {}
 
@@ -49,7 +48,7 @@ async function receiveMessageWithDeadline<T>(
   while (true) {
     // Check if timeout expired
     if (deadlineMs && Date.now() >= deadlineMs) {
-      const error = new TimeoutError(`Timed out waiting for message "${messageType}"`);
+      const error = new OperationTimedOutError('receiveMessage');
       await operationManager.recordError(
         RECEIVE_MESSAGE_OPERATION_NAME,
         seqId,
@@ -102,13 +101,13 @@ async function waitForMessageNotification(
 
     if (timeoutMs !== undefined) {
       if (timeoutMs <= 0) {
-        reject(new TimeoutError('Timeout expired'));
+        reject(new OperationTimedOutError('receiveMessageDurableDeadline'));
         return;
       }
 
       timeoutId = setTimeout(() => {
         unsubscribe();
-        reject(new TimeoutError('Timeout waiting for message notification'));
+        reject(new OperationTimedOutError('waitForMessageNotification'));
       }, timeoutMs);
     }
 

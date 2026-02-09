@@ -3,12 +3,12 @@ import {
   FatalError,
   MaxRetriesExceededError,
 } from '../internal/errors';
-import { getExecutionContext } from '../internal/execution-context';
+import { getExecutionContext } from '../internal/context/execution-context';
 import { sleep } from '../internal/utils/sleep';
 import {
   executeAndRecordOperation,
   returnOrThrowOperationResult,
-} from '../internal/operation-manager';
+} from '../internal/context/operation-manager';
 
 export type RetryConfig = {
   maxRetries?: number;

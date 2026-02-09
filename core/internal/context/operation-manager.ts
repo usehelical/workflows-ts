@@ -1,10 +1,10 @@
-import { withDbRetry } from './db/retry';
-import { deserialize, deserializeError, serialize, serializeError } from './serialization';
+import { withDbRetry } from '../db/retry';
+import { deserialize, deserializeError, serialize, serializeError } from '../utils/serialization';
 import { getExecutionContext } from './execution-context';
-import { RunCancelledError } from './errors';
-import { getRun } from './repository/get-run';
-import { insertOperation } from './repository/insert-operation';
-import { Database, Transaction } from './db/db';
+import { RunCancelledError } from '../errors';
+import { getRun } from '../repository/get-run';
+import { insertOperation } from '../repository/insert-operation';
+import { Database, Transaction } from '../db/db';
 
 export interface OperationResult {
   result?: string;

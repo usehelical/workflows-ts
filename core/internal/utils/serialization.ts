@@ -1,4 +1,4 @@
-import { SerializationError } from './errors';
+import { SerializationError } from '../errors';
 import {
   serializeError as _serializeError,
   deserializeError as _deserializeError,

@@ -1,10 +1,11 @@
-import { RuntimeContext } from '../core/internal/runtime-context';
+import { RuntimeContext } from '../core/internal/context/runtime-context';
 import { RunStatus } from '../core';
-import { getRunStatus } from './get-run-status';
-import { waitForRunResult } from './wait-for-run-result';
+import { getRunStatus } from '../core/internal/get-run-status';
+import { waitForRunResult } from '../core/internal/wait-for-run-result';
+import { BaseError } from '../core/internal/errors';
 
 export type RunResult<TReturn> =
-  | { error: Error; success: false }
+  | { error: BaseError | Error; success: false }
   | { data: TReturn; success: true };
 
 export interface Run<TReturn = unknown> {

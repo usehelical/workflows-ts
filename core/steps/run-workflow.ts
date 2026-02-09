@@ -1,12 +1,12 @@
 import { createRunHandle } from '../../client/run';
-import { RunWorkflowOptions } from '../../client/run-workflow';
+import { RunWorkflowOptions } from '../internal/run-workflow';
 import { withDbRetry } from '../internal/db/retry';
 import { WorkflowNotFoundError } from '../../client/errors';
 import { executeWorkflow } from '../internal/execute-workflow';
-import { getExecutionContext } from '../internal/execution-context';
-import { executeAndRecordOperation } from '../internal/operation-manager';
+import { getExecutionContext } from '../internal/context/execution-context';
+import { executeAndRecordOperation } from '../internal/context/operation-manager';
 import { insertPendingRun } from '../internal/repository/insert-pending-run';
-import { deserialize, deserializeError, serialize } from '../internal/serialization';
+import { deserialize, deserializeError, serialize } from '../internal/utils/serialization';
 import { WorkflowEntry } from '../workflow';
 import crypto from 'node:crypto';
 

@@ -2,8 +2,8 @@ import { executeWorkflow } from './execute-workflow';
 import { getOperations } from './repository/get-operations';
 import { getPendingRuns } from './repository/get-pending-runs';
 import { upsertRun } from './repository/upsert-run';
-import { RuntimeContext } from './runtime-context';
-import { deserialize } from './serialization';
+import { RuntimeContext } from './context/runtime-context';
+import { deserialize } from './utils/serialization';
 
 export async function recoverPendingRuns(ctx: RuntimeContext) {
   const { db, executorId, workflowRegistry } = ctx;

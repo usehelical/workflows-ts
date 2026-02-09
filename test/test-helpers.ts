@@ -1,5 +1,5 @@
 import { Database } from '../core/internal/db/db';
-import { deserializeError, serialize } from '../core/internal/serialization';
+import { deserializeError, serialize } from '../core/internal/utils/serialization';
 import { runStep } from '../core/steps/run-step';
 import { RunStatus } from '../core/workflow';
 

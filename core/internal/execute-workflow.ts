@@ -1,14 +1,12 @@
 import { createExecutionContext } from '../../client/utils';
 import { WorkflowFunction } from '../workflow';
-import { OperationResult } from './operation-manager';
+import { OperationResult } from './context/operation-manager';
 import { recordRunResult } from './repository/record-run-result';
-import { serialize, serializeError } from './serialization';
-import { RunWorkflowOptions } from '../../client/run-workflow';
-import { cancelRun } from './repository/cancel-run';
-import { DeadlineError, RunCancelledError } from './errors';
-import { TimeoutError } from '../../client/errors';
-import { getExecutionContext, runWithExecutionContext } from './execution-context';
-import { RuntimeContext } from './runtime-context';
+import { serialize, serializeError } from './utils/serialization';
+import { RunWorkflowOptions } from './run-workflow';
+import { RunCancelledError, RunDeadlineExceededError, RunTimedOutError } from './errors';
+import { getExecutionContext, runWithExecutionContext } from './context/execution-context';
+import { RuntimeContext } from './context/runtime-context';
 
 export type ExecuteWorkflowParams<TArgs extends unknown[] = unknown[], TReturn = unknown> = {
   runId: string;
@@ -28,7 +26,7 @@ export async function executeWorkflow<TArgs extends unknown[], TReturn>(
   const { options, runId, runPath, fn, args, operations } = params;
 
   const abortController = new AbortController();
-  const [deadline] = getDeadlineAndReason({
+  const [deadline, deadlineReason] = getDeadlineAndReason({
     timeout: options?.timeout,
     deadline: options?.deadline,
   });
@@ -48,12 +46,17 @@ export async function executeWorkflow<TArgs extends unknown[], TReturn>(
       const result = await runWithExecutionContext(runStore, async () => {
         return await runWithTimeout(async () => {
           return await fn(...args);
-        });
+        }, deadlineReason);
       });
       await recordRunResult(db, runId, { result: result ? serialize(result) : undefined });
       return result;
     } catch (error) {
-      await recordRunResult(db, runId, { error: serializeError(error as Error) });
+      if (error instanceof RunCancelledError) {
+        // User already called cancelRun() - just record the error
+        await recordRunResult(db, runId, { error: serializeError(error as Error) }, true);
+      } else {
+        await recordRunResult(db, runId, { error: serializeError(error as Error) });
+      }
       throw error;
     } finally {
       runRegistry.unregisterRun(runId);
@@ -90,8 +93,11 @@ function getDeadlineAndReason({
   return [undefined, undefined];
 }
 
-export async function runWithTimeout<T>(fn: () => Promise<T>): Promise<T> {
-  const { runId, db, abortSignal } = getExecutionContext();
+export async function runWithTimeout<T>(
+  fn: () => Promise<T>,
+  deadlineReason?: 'timeout' | 'deadline',
+): Promise<T> {
+  const { abortSignal } = getExecutionContext();
 
   const abortPromise = new Promise<T>((_, reject) => {
     abortSignal.throwIfAborted();
@@ -99,7 +105,7 @@ export async function runWithTimeout<T>(fn: () => Promise<T>): Promise<T> {
       'abort',
       () => {
         if (abortSignal.reason?.name === 'TimeoutError') {
-          reject(new TimeoutError(`Workflow timed out`));
+          reject(new RunTimedOutError());
           return;
         }
         reject(new RunCancelledError());
@@ -113,8 +119,13 @@ export async function runWithTimeout<T>(fn: () => Promise<T>): Promise<T> {
   try {
     return await Promise.race([callPromise, abortPromise]);
   } catch (error) {
-    if (error instanceof TimeoutError || error instanceof DeadlineError) {
-      await cancelRun(runId, db);
+    if (error instanceof RunTimedOutError) {
+      if (deadlineReason === 'timeout') {
+        throw new RunTimedOutError();
+      } else if (deadlineReason === 'deadline') {
+        throw new RunDeadlineExceededError();
+      }
+      throw error;
     }
     await callPromise.catch(() => {});
     throw error;

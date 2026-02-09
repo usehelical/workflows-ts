@@ -17,17 +17,69 @@ export enum ErrorType {
   QUEUE_NOT_FOUND = 'QUEUE_NOT_FOUND',
 }
 
+export type ErrorReason =
+  | 'timeout'
+  | 'deadline'
+  | 'cancel'
+  | 'unhandled'
+  | 'max_recovery_attempts_exceeded'
+  | 'unknown';
+
+export class BaseError extends Error {
+  readonly reason: ErrorReason;
+
+  constructor(message: string, reason: ErrorReason) {
+    super(message);
+    this.reason = reason;
+  }
+}
+
+export class RunTimedOutError extends BaseError {
+  constructor() {
+    super('This workflow run has timed out', 'timeout');
+  }
+}
+
+export class UnknownError extends BaseError {
+  constructor(message?: string) {
+    super(message || 'An unknown error occurred', 'unknown');
+  }
+}
+
+export class RunDeadlineExceededError extends BaseError {
+  constructor() {
+    super('This workflow run has exceeded its deadline', 'deadline');
+  }
+}
+
+export class RunCancelledError extends BaseError {
+  constructor(message?: string) {
+    super(message || 'This workflow run has been cancelled', 'cancel');
+  }
+}
+
+export class MaxRecoveryAttemptsExceededError extends BaseError {
+  constructor(message?: string) {
+    super(message || 'Max recovery attempts exceeded', 'max_recovery_attempts_exceeded');
+  }
+}
+
+export class UnhandledError extends BaseError {
+  constructor(error: Error) {
+    super(error.message, 'unhandled');
+  }
+}
+
+export class OperationTimedOutError extends BaseError {
+  constructor(operationName: string) {
+    super(`This operation "${operationName}" has timed out`, 'timeout');
+  }
+}
+
 export class InvalidWorkflowTransitionError extends Error {
   constructor(message: string) {
     super(message);
     this.name = ErrorType.INVALID_WORKFLOW_TRANSITION;
-  }
-}
-
-export class RunCancelledError extends Error {
-  constructor() {
-    super('This workflow run has been cancelled');
-    this.name = ErrorType.RUN_CANCELLED;
   }
 }
 
@@ -89,27 +141,6 @@ export class SerializationError extends Error {
   constructor(message: string) {
     super(message);
     this.name = ErrorType.SERIALIZATION_ERROR;
-  }
-}
-
-export class TimeoutError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = ErrorType.TIMEOUT;
-  }
-}
-
-export class DeadlineError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = ErrorType.DEADLINE;
-  }
-}
-
-export class CancelError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = ErrorType.CANCEL;
   }
 }
 

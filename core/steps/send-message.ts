@@ -1,7 +1,7 @@
 import { Run } from '../../client/run';
-import { getExecutionContext } from '../internal/execution-context';
-import { returnOrThrowOperationResult } from '../internal/operation-manager';
-import { serialize } from '../internal/serialization';
+import { getExecutionContext } from '../internal/context/execution-context';
+import { returnOrThrowOperationResult } from '../internal/context/operation-manager';
+import { serialize } from '../internal/utils/serialization';
 import { MessageDefinition } from '../message';
 import { withDbRetry } from '../internal/db/retry';
 import { insertMessage } from '../internal/repository/insert-message';

@@ -1,10 +1,10 @@
-import { PollingLoop } from './events/polling-loop';
-import { getExecutableRuns } from './repository/get-executable-runs';
-import { QueueRateLimit } from '../queue';
-import { deserialize } from './serialization';
-import { executeWorkflow } from './execute-workflow';
+import { PollingLoop } from '../events/polling-loop';
+import { getExecutableRuns } from '../repository/get-executable-runs';
+import { QueueRateLimit } from '../../queue';
+import { deserialize } from '../utils/serialization';
+import { executeWorkflow } from '../execute-workflow';
 import { RuntimeContext } from './runtime-context';
-import { getQueuePartitions } from './repository/get-queue-partitions';
+import { getQueuePartitions } from '../repository/get-queue-partitions';
 
 export interface QueueInstance {
   rateLimit?: QueueRateLimit;

@@ -1,10 +1,10 @@
 import { QueueNotFoundError, WorkflowNotFoundError } from '../../client/errors';
-import { QueueWorkflowOptions } from '../../client/queue-workflow';
+import { QueueWorkflowOptions } from '../internal/queue-workflow';
 import { createRunHandle } from '../../client/run';
-import { getExecutionContext } from '../internal/execution-context';
-import { executeAndRecordOperation } from '../internal/operation-manager';
+import { getExecutionContext } from '../internal/context/execution-context';
+import { executeAndRecordOperation } from '../internal/context/operation-manager';
 import { enqueueRun } from '../internal/repository/enqueue-run';
-import { deserialize, deserializeError, serialize } from '../internal/serialization';
+import { deserialize, deserializeError, serialize } from '../internal/utils/serialization';
 import { QueueEntry } from '../queue';
 import { WorkflowEntry } from '../workflow';
 

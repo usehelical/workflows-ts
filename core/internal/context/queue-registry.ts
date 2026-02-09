@@ -1,4 +1,4 @@
-import { QueueDefinition, QueueEntry } from '../queue';
+import { QueueDefinition, QueueEntry } from '../../queue';
 import { QueueInstance } from './queue-manager';
 
 export class QueueRegistry {

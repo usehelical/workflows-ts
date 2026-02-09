@@ -1,8 +1,8 @@
-import { RuntimeContext } from '../core/internal/runtime-context';
-import { serialize } from '../core/internal/serialization';
-import { MessageDefinition } from '../core/message';
-import { Run } from './run';
-import { insertMessage } from '../core/internal/repository/insert-message';
+import { RuntimeContext } from './context/runtime-context';
+import { serialize } from './utils/serialization';
+import { MessageDefinition } from '../message';
+import { Run } from '../../client/run';
+import { insertMessage } from './repository/insert-message';
 
 export async function sendMessage(
   ctx: RuntimeContext,

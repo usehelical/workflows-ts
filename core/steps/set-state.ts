@@ -1,8 +1,8 @@
 import { withDbRetry } from '../internal/db/retry';
-import { getExecutionContext } from '../internal/execution-context';
-import { returnOrThrowOperationResult } from '../internal/operation-manager';
+import { getExecutionContext } from '../internal/context/execution-context';
+import { returnOrThrowOperationResult } from '../internal/context/operation-manager';
 import { insertState } from '../internal/repository/insert-state';
-import { serialize } from '../internal/serialization';
+import { serialize } from '../internal/utils/serialization';
 import { StateDefinition } from '../state';
 
 const SET_STATE_OPERATION_NAME = 'workflow::state::set';

@@ -1,5 +1,5 @@
-import { getExecutionContext } from '../internal/execution-context';
-import { executeAndRecordOperation } from '../internal/operation-manager';
+import { getExecutionContext } from '../internal/context/execution-context';
+import { executeAndRecordOperation } from '../internal/context/operation-manager';
 
 export async function now() {
   const { operationManager } = getExecutionContext();

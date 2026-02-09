@@ -1,5 +1,5 @@
-import { getExecutionContext } from './execution-context';
-import { executeAndRecordOperation } from './operation-manager';
+import { getExecutionContext } from './context/execution-context';
+import { executeAndRecordOperation } from './context/operation-manager';
 
 export async function withDurableDeadline<T>(
   timeoutMs: number | undefined,

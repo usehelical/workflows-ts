@@ -1,6 +1,6 @@
-import { getExecutionContext } from '../internal/execution-context';
+import { getExecutionContext } from '../internal/context/execution-context';
 import crypto from 'node:crypto';
-import { executeAndRecordOperation } from '../internal/operation-manager';
+import { executeAndRecordOperation } from '../internal/context/operation-manager';
 
 export async function randomUUID() {
   const { operationManager } = getExecutionContext();

@@ -2,6 +2,7 @@ import { EventBus, EventBusCore } from './event-bus-core';
 import { PollingLoop } from './polling-loop';
 import { Database } from '../db/db';
 import { getMessageBatch } from '../repository/get-message-batch';
+import { withDbRetry } from '../db/retry';
 
 type MessageEvent = undefined;
 
@@ -13,8 +14,11 @@ export class MessageEventBus implements Omit<EventBus, 'emitEvent'> {
   private readonly bus: EventBusCore<MessageEvent>;
   private readonly pollingLoop: PollingLoop;
 
-  constructor(private readonly db: Database) {
-    this.pollingLoop = new PollingLoop(POLLING_FALLBACK_INTERVAL_MS, this.handlePoll.bind(this));
+  constructor(
+    private readonly db: Database,
+    pollingFallbackIntervalMs: number = POLLING_FALLBACK_INTERVAL_MS,
+  ) {
+    this.pollingLoop = new PollingLoop(pollingFallbackIntervalMs, this.handlePoll.bind(this));
     this.bus = new EventBusCore({ allowWildcardSubscriptions: true }, this.pollingLoop);
     this.pollingLoop.start();
   }
@@ -32,9 +36,15 @@ export class MessageEventBus implements Omit<EventBus, 'emitEvent'> {
     if (messageRetrievalRequests.length === 0) {
       return;
     }
-    const messages = await getMessageBatch(this.db, messageRetrievalRequests);
-    for (const message of messages) {
-      this.bus.emitEvent(message.destinationRunId, message.type, undefined, 1);
+    try {
+      const messages = await withDbRetry(
+        async () => await getMessageBatch(this.db, messageRetrievalRequests),
+      );
+      for (const message of messages) {
+        this.bus.emitEvent(message.destinationRunId, message.type, undefined, 1);
+      }
+    } catch (error) {
+      console.error('Error polling messages:', error);
     }
   }
 

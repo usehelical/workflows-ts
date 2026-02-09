@@ -9,7 +9,7 @@ type EventBusCoreConfig = {
 };
 
 export interface EventBus {
-  handleNotify: (payload: string) => void;
+  handleNotify: (payload: string) => Promise<void> | void;
   subscribe: CallableFunction;
   emitEvent: CallableFunction;
   destroy: () => void;

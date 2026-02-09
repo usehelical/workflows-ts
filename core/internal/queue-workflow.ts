@@ -1,11 +1,11 @@
-import { QueueNotFoundError, WorkflowNotFoundError } from './errors';
-import { RuntimeContext } from '../core/internal/runtime-context';
-import { serialize } from '../core/internal/serialization';
-import { QueueEntry } from '../core/queue';
-import { WorkflowEntry } from '../core/workflow';
+import { QueueNotFoundError, WorkflowNotFoundError } from '../../client/errors';
+import { RuntimeContext } from './context/runtime-context';
+import { serialize } from './utils/serialization';
+import { QueueEntry } from '../queue';
+import { WorkflowEntry } from '../workflow';
 import crypto from 'node:crypto';
-import { createRunHandle } from './run';
-import { enqueueRun } from '../core/internal/repository/enqueue-run';
+import { createRunHandle } from '../../client/run';
+import { enqueueRun } from './repository/enqueue-run';
 
 export type QueueWorkflowOptions = {
   timeout?: number;

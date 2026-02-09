@@ -1,18 +1,18 @@
-import { RunStatus } from '../core';
-import { RunEntry } from '../core/internal/run-registry';
-import { RuntimeContext } from '../core/internal/runtime-context';
-import { getRunStatus as getRunStatusFromDb } from '../core/internal/repository/get-run-status';
+import { RunStatus } from '..';
+import { RunEntry } from './context/run-registry';
+import { RuntimeContext } from './context/runtime-context';
+import { getRunStatus as getRunStatusQuery } from './db/queries/get-run-status';
 
 export async function getRunStatus(ctx: RuntimeContext, runId: string): Promise<RunStatus> {
   const { db, runRegistry } = ctx;
   const run = runRegistry.getRun(runId);
   if (run) {
-    return getRunStatusFromRegistry(run);
+    return deriveRunStatus(run);
   }
-  return getRunStatusFromDb(db, runId);
+  return getRunStatusQuery(db, runId);
 }
 
-async function getRunStatusFromRegistry(runEntry: RunEntry): Promise<RunStatus> {
+async function deriveRunStatus(runEntry: RunEntry): Promise<RunStatus> {
   if (runEntry.store.abortSignal.aborted) {
     return 'cancelled';
   }

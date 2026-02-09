@@ -1,4 +1,4 @@
-import { getExecutionContext } from '../../internal/execution-context';
+import { getExecutionContext } from '../../internal/context/execution-context';
 import { createHash } from 'node:crypto';
 
 /**

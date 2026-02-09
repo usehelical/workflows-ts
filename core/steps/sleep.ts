@@ -1,5 +1,5 @@
 import { RunCancelledError } from '../internal/errors';
-import { getExecutionContext } from '../internal/execution-context';
+import { getExecutionContext } from '../internal/context/execution-context';
 import { withDurableDeadline } from '../internal/with-durable-deadline';
 
 const SLEEP_OPERATION_NAME = '_helical::sleep';
