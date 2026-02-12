@@ -3,3 +3,4 @@ coverage/
 .cursor/
 .vscode/
 dist/
+.env
