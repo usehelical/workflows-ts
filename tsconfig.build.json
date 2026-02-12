@@ -5,6 +5,5 @@
     "declaration": true,
     "declarationMap": true
   },
-  "include": ["client/index.ts", "core/index.ts", "client/**/*.ts", "core/**/*.ts"],
   "exclude": ["**/*.test.ts", "test/**/*", "**/_*.ts"]
 }

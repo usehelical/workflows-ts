@@ -12,7 +12,12 @@
     "strict": true,
     "noEmit": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["vitest/globals", "node"]
+    "types": ["vitest/globals", "node"],
+    "paths": {
+      "@internal/*": ["./src/internal/*"],
+      "@api/*": ["./src/api/*"],
+      "@test/*": ["./src/test/*"]
+    }
   },
   "include": ["**/*.ts"],
   "exclude": ["node_modules", "dist", "**/_*.ts"]

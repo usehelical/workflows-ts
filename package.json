@@ -10,9 +10,9 @@
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
     },
-    "./workflows": {
-      "types": "./dist/workflows.d.ts",
-      "import": "./dist/workflows.js"
+    "./api": {
+      "types": "./dist/api.d.ts",
+      "import": "./dist/api.js"
     }
   },
   "files": [
@@ -53,6 +53,7 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.54.0",
     "uuid_ossp": "link:@electric-sql/pglite/contrib/uuid_ossp",
+    "vite-tsconfig-paths": "^6.1.0",
     "vitest": "^4.0.17"
   },
   "dependencies": {

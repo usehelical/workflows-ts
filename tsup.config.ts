@@ -2,8 +2,8 @@ import { defineConfig } from 'tsup';
 
 export default defineConfig({
   entry: {
-    index: 'client/index.ts',
-    workflows: 'core/index.ts',
+    index: 'src/main/index.ts',
+    api: 'src/api/index.ts',
   },
   format: ['esm'],
   dts: true,
