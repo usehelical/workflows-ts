@@ -51,22 +51,22 @@ export async function queueWorkflow<TArgs extends unknown[], TReturn>(
       });
       return runId;
     });
+
+    return createRunHandle<TReturn>(ctx, newRunId);
   }
 
-  if (ctx.type === 'runtime' || ctx.type === 'client') {
-    await withDbRetry(
-      async () =>
-        await enqueueRun(db, {
-          runId: newRunId,
-          path: [newRunId],
-          inputs: serialize(args),
-          workflowName: workflowName,
-          queueName: queueName,
-          timeout: options?.timeout,
-          deadline: options?.deadline,
-        }),
-    );
-  }
+  await withDbRetry(
+    async () =>
+      await enqueueRun(db, {
+        runId: newRunId,
+        path: [newRunId],
+        inputs: serialize(args),
+        workflowName: workflowName,
+        queueName: queueName,
+        timeout: options?.timeout,
+        deadline: options?.deadline,
+      }),
+  );
 
   return createRunHandle<TReturn>(ctx, newRunId);
 }

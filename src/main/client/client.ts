@@ -16,7 +16,7 @@ import { sendMessage } from '@internal/send-message';
 import { StateDefinition } from '@api/state';
 import { getState } from '@internal/get-state';
 import { WorkflowDefinition, WorkflowSignature } from '@api/workflow';
-import { QueueDefinition } from '@api/queue';
+import { QueueDefinition, QueueSignature } from '@api/queue';
 import { Executor, WorkflowOperations } from '../executor';
 
 type ExtractWorkflows<T> = T extends Executor<infer W, any> ? W : never;
@@ -93,13 +93,13 @@ export function createClient<TExecutor extends Executor<any, any>>(
     workflows,
     queues,
     queueWorkflow: async <TArgs extends unknown[], TReturn>(
-      queue: string,
+      queue: QueueSignature,
       wf: WorkflowSignature<TArgs, TReturn>,
       args?: TArgs,
       options?: QueueWorkflowOptions,
     ) => {
       await notifySetupPromise;
-      return queueWorkflow<TArgs, TReturn>(clientContext, queue, wf.name, args, options);
+      return queueWorkflow<TArgs, TReturn>(clientContext, queue.name, wf.name, args, options);
     },
     cancelRun: async (runId: string) => cancelRun(clientContext, runId),
     resumeRun: async (runId: string) => resumeRun(clientContext, runId),

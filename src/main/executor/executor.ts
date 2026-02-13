@@ -74,7 +74,7 @@ export interface WorkflowOperations<
       TWorkflows[number],
       { name: WK }
     >,
-    TReturn = TWorkflow extends WorkflowDefinition<unknown[], infer R> ? R : never,
+    TReturn = TWorkflow extends WorkflowSignature<unknown[], infer R> ? R : never,
   >(
     queue: QK,
     wf: WK,
@@ -88,7 +88,7 @@ export interface WorkflowOperations<
       TWorkflows[number],
       { name: WK }
     >,
-    TReturn = TWorkflow extends WorkflowDefinition<unknown[], infer R> ? R : never,
+    TReturn = TWorkflow extends WorkflowSignature<unknown[], infer R> ? R : never,
   >(
     queue: QK,
     wf: WK,
@@ -97,14 +97,14 @@ export interface WorkflowOperations<
   // Shared methods
   cancelRun(runId: string): Promise<void>;
   resumeRun(runId: string): Promise<void>;
-  getRun<TWorkflow extends WorkflowDefinition<unknown[], unknown>>(
+  getRun<TWorkflow extends WorkflowSignature<unknown[], unknown>>(
     runId: string,
-  ): Promise<Run<TWorkflow extends WorkflowDefinition<unknown[], infer R> ? R : never>>;
+  ): Promise<Run<TWorkflow extends WorkflowSignature<unknown[], infer R> ? R : never>>;
   getRun<TReturn>(runId: string): Promise<Run<TReturn>>;
   getRunStatus(runId: string): Promise<string>;
-  waitForRunResult<TWorkflow extends WorkflowDefinition<unknown[], unknown>>(
+  waitForRunResult<TWorkflow extends WorkflowSignature<unknown[], unknown>>(
     runId: string,
-  ): Promise<RunResult<TWorkflow extends WorkflowDefinition<unknown[], infer R> ? R : never>>;
+  ): Promise<RunResult<TWorkflow extends WorkflowSignature<unknown[], infer R> ? R : never>>;
   waitForRunResult<TReturn>(runId: string): Promise<RunResult<TReturn>>;
   sendMessage<T>(target: Run | string, name: MessageDefinition<T>, data: T): Promise<void>;
   getState<T>(target: Run | string, key: StateDefinition<T> | string): Promise<T | undefined>;
