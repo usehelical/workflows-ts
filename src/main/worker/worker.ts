@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import crypto from 'node:crypto';
-import { QueueDefinition, QueueSignature } from '@api/queue';
-import { WorkflowDefinition, WorkflowSignature } from '@api/workflow';
+import { QueueDefinition } from '@api/queue';
+import { WorkflowDefinition } from '@api/workflow';
 import { StateEventBus } from '@internal/events/state-event-bus';
 import { MessageEventBus } from '@internal/events/message-event-bus';
 import { runWorkflow, RunWorkflowOptions } from '@internal/run-workflow';
@@ -28,125 +28,112 @@ type CreateInstanceOptions = {
   connectionString: string;
 };
 
-export type createExecutorParams<
-  TWorkflows extends Array<WorkflowDefinition<unknown[], unknown>>,
-  TQueues extends Array<QueueDefinition>,
+export type createWorkerParams<
+  TWorkflows extends Record<string, WorkflowDefinition<unknown[], unknown>>,
+  TQueues extends Record<string, QueueDefinition>,
 > = {
   workflows: TWorkflows;
   queues?: TQueues;
   options: CreateInstanceOptions;
 };
 
-type ExtractNames<T extends readonly { name: string }[]> = T[number]['name'];
-
 export interface WorkflowOperations<
-  TWorkflows extends readonly WorkflowSignature<unknown[], unknown>[],
-  TQueues extends readonly QueueDefinition[],
+  TWorkflows extends Record<string, WorkflowDefinition<unknown[], unknown>>,
+  TQueues extends Record<string, QueueDefinition>,
 > {
   // queueWorkflow overloads
   queueWorkflow<
-    TQueue extends Extract<TQueues[number], { name: ExtractNames<TQueues> }> = Extract<
-      TQueues[number],
-      { name: ExtractNames<TQueues> }
-    >,
-    TWorkflow extends Extract<TWorkflows[number], { name: ExtractNames<TWorkflows> }> = Extract<
-      TWorkflows[number],
-      { name: ExtractNames<TWorkflows> }
-    >,
-    TArgs extends unknown[] = TWorkflow extends WorkflowSignature<
+    QName extends keyof TQueues,
+    WName extends keyof TWorkflows,
+    TArgs extends unknown[] = TWorkflows[WName] extends WorkflowDefinition<
       infer A extends unknown[],
       unknown
     >
       ? A
       : never,
-    TReturn = TWorkflow extends WorkflowSignature<unknown[], infer R> ? R : never,
+    TReturn = TWorkflows[WName] extends WorkflowDefinition<unknown[], infer R> ? R : never,
   >(
-    queue: TQueue,
-    wf: TWorkflow,
+    queueName: QName,
+    workflowName: WName,
     args: TArgs,
     options?: QueueWorkflowOptions,
   ): Promise<Run<TReturn>>;
 
   queueWorkflow<
-    QK extends ExtractNames<TQueues>,
-    WK extends ExtractNames<TWorkflows>,
-    TWorkflow extends Extract<TWorkflows[number], { name: WK }> = Extract<
-      TWorkflows[number],
-      { name: WK }
-    >,
-    TReturn = TWorkflow extends WorkflowSignature<unknown[], infer R> ? R : never,
+    QName extends keyof TQueues,
+    WName extends keyof TWorkflows,
+    TReturn = TWorkflows[WName] extends WorkflowDefinition<unknown[], infer R> ? R : never,
   >(
-    queue: QK,
-    wf: WK,
+    queueName: QName,
+    workflowName: WName,
     options: QueueWorkflowOptions,
   ): Promise<Run<TReturn>>;
 
   queueWorkflow<
-    QK extends ExtractNames<TQueues>,
-    WK extends ExtractNames<TWorkflows>,
-    TWorkflow extends Extract<TWorkflows[number], { name: WK }> = Extract<
-      TWorkflows[number],
-      { name: WK }
-    >,
-    TReturn = TWorkflow extends WorkflowSignature<unknown[], infer R> ? R : never,
+    QName extends keyof TQueues,
+    WName extends keyof TWorkflows,
+    TReturn = TWorkflows[WName] extends WorkflowDefinition<unknown[], infer R> ? R : never,
   >(
-    queue: QK,
-    wf: WK,
+    queueName: QName,
+    workflowName: WName,
   ): Promise<Run<TReturn>>;
 
   // Shared methods
   cancelRun(runId: string): Promise<void>;
   resumeRun(runId: string): Promise<void>;
-  getRun<TWorkflow extends WorkflowSignature<unknown[], unknown>>(
+  getRun<TWorkflow extends WorkflowDefinition<unknown[], unknown>>(
     runId: string,
-  ): Promise<Run<TWorkflow extends WorkflowSignature<unknown[], infer R> ? R : never>>;
+  ): Promise<Run<TWorkflow extends WorkflowDefinition<unknown[], infer R> ? R : never>>;
   getRun<TReturn>(runId: string): Promise<Run<TReturn>>;
   getRunStatus(runId: string): Promise<string>;
-  waitForRunResult<TWorkflow extends WorkflowSignature<unknown[], unknown>>(
+  waitForRunResult<TWorkflow extends WorkflowDefinition<unknown[], unknown>>(
     runId: string,
-  ): Promise<RunResult<TWorkflow extends WorkflowSignature<unknown[], infer R> ? R : never>>;
+  ): Promise<RunResult<TWorkflow extends WorkflowDefinition<unknown[], infer R> ? R : never>>;
   waitForRunResult<TReturn>(runId: string): Promise<RunResult<TReturn>>;
   sendMessage<T>(target: Run | string, name: MessageDefinition<T>, data: T): Promise<void>;
   getState<T>(target: Run | string, key: StateDefinition<T> | string): Promise<T | undefined>;
 }
 
-export interface Executor<
-  TWorkflows extends Array<WorkflowDefinition<unknown[], unknown>>,
-  TQueues extends Array<QueueDefinition>,
+export interface Worker<
+  TWorkflows extends Record<string, WorkflowDefinition<unknown[], unknown>>,
+  TQueues extends Record<string, QueueDefinition>,
 > extends WorkflowOperations<TWorkflows, TQueues> {
-  // Executor-specific: runWorkflow overloads
+  // Worker-specific: runWorkflow overloads
   runWorkflow<
-    TWorkflow extends WorkflowDefinition<any[], any> & { name: ExtractNames<TWorkflows> },
-    TReturn = TWorkflow extends WorkflowDefinition<any[], infer R> ? R : never,
+    WName extends keyof TWorkflows,
+    TArgs extends unknown[] = TWorkflows[WName] extends WorkflowDefinition<
+      infer A extends unknown[],
+      unknown
+    >
+      ? A
+      : never,
+    TReturn = TWorkflows[WName] extends WorkflowDefinition<unknown[], infer R> ? R : never,
   >(
-    wf: TWorkflow,
+    workflowName: WName,
+    args: TArgs,
+    options?: RunWorkflowOptions,
   ): Promise<Run<TReturn>>;
 
   runWorkflow<
-    TWorkflow extends WorkflowDefinition<any[], any> & { name: ExtractNames<TWorkflows> },
-    TReturn = TWorkflow extends WorkflowDefinition<any[], infer R> ? R : never,
+    WName extends keyof TWorkflows,
+    TReturn = TWorkflows[WName] extends WorkflowDefinition<unknown[], infer R> ? R : never,
   >(
-    wf: TWorkflow,
+    workflowName: WName,
     options: RunWorkflowOptions,
   ): Promise<Run<TReturn>>;
 
   runWorkflow<
-    TWorkflow extends WorkflowDefinition<any[], any> & { name: ExtractNames<TWorkflows> },
-    TArgs extends any[] = TWorkflow extends WorkflowDefinition<infer A extends unknown[], unknown>
-      ? A
-      : never,
-    TReturn = TWorkflow extends WorkflowDefinition<any[], infer R> ? R : never,
+    WName extends keyof TWorkflows,
+    TReturn = TWorkflows[WName] extends WorkflowDefinition<unknown[], infer R> ? R : never,
   >(
-    wf: TWorkflow,
-    args: TArgs,
-    options?: RunWorkflowOptions,
+    workflowName: WName,
   ): Promise<Run<TReturn>>;
 }
 
-export function createExecutor<
-  TWorkflows extends Array<WorkflowDefinition<any[], any>>,
-  TQueues extends Array<QueueDefinition>,
->(props: createExecutorParams<TWorkflows, TQueues>): Executor<TWorkflows, TQueues> {
+export function createWorker<
+  TWorkflows extends Record<string, WorkflowDefinition<any[], any>>,
+  TQueues extends Record<string, QueueDefinition>,
+>(props: createWorkerParams<TWorkflows, TQueues>): Worker<TWorkflows, TQueues> {
   const { db, client } = createPgDriver({ connectionString: props.options.connectionString });
   const messageEventBus = new MessageEventBus(db);
   const stateEventBus = new StateEventBus(db);
@@ -154,10 +141,7 @@ export function createExecutor<
   const runRegistry = new RunRegistry();
   const runEventBus = new RunEventBus(db);
 
-  const workflowsMap = Object.fromEntries(props.workflows.map((w) => [w.name, w])) as Record<
-    string,
-    WorkflowDefinition<unknown[], unknown>
-  >;
+  const workflowsMap = props.workflows as Record<string, WorkflowDefinition<unknown[], unknown>>;
 
   const runtimeContext: RuntimeContext = {
     type: 'runtime',
@@ -167,7 +151,7 @@ export function createExecutor<
     stateEventBus,
     runRegistry,
     workflowsMap,
-    queueRegistry: props.queues || [],
+    queueRegistry: props.queues || {},
     runEventBus,
   };
 
@@ -184,7 +168,7 @@ export function createExecutor<
 
   return {
     runWorkflow: async <TArgs extends unknown[] = unknown[], TReturn = unknown>(
-      wf: WorkflowSignature<TArgs, TReturn>,
+      workflowName: string,
       argsOrOptions?: TArgs | RunWorkflowOptions,
       options?: RunWorkflowOptions,
     ) => {
@@ -198,11 +182,11 @@ export function createExecutor<
           opts = argsOrOptions;
         }
       }
-      return runWorkflow<TArgs, TReturn>(runtimeContext, wf.name, args, opts);
+      return runWorkflow<TArgs, TReturn>(runtimeContext, workflowName, args, opts);
     },
     queueWorkflow: async (
-      queue: QueueSignature,
-      wf: WorkflowSignature<unknown[], unknown>,
+      queueName: string,
+      workflowName: string,
       argsOrOptions?: unknown[] | QueueWorkflowOptions,
       options?: QueueWorkflowOptions,
     ) => {
@@ -216,7 +200,7 @@ export function createExecutor<
           opts = argsOrOptions;
         }
       }
-      return queueWorkflow(runtimeContext, queue.name, wf.name, args, opts);
+      return queueWorkflow(runtimeContext, queueName, workflowName, args, opts);
     },
     getRun: async (runId: string) => {
       await notifySetupPromise;
@@ -240,4 +224,4 @@ export function createExecutor<
   };
 }
 
-export type Instance = ReturnType<typeof createExecutor>;
+export type Instance = ReturnType<typeof createWorker>;

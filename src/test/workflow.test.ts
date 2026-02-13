@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { setupIntegrationTest } from './test-utils';
-import { createExecutor } from '../main/executor';
+import { createWorker } from '../main/worker';
 import { defineWorkflow } from '../api/workflow';
 import { sleep } from '@internal/utils/sleep';
 import { checkRunInDb, checkStepInDb, createPromise, createSimpleWorkflow } from './test-helpers';
@@ -23,21 +23,23 @@ describe('Workflows', () => {
       user: { name: 'John', age: 30 },
     };
 
-    const exampleWorkflow = defineWorkflow(workflowName, async (...args: typeof workflowArgs) => {
+    const exampleWorkflow = defineWorkflow(async (...args: typeof workflowArgs) => {
       expect(args).toEqual(workflowArgs);
       await promise;
       return workflowOutput;
     });
 
-    const instance = createExecutor({
-      workflows: [exampleWorkflow],
+    const instance = createWorker({
+      workflows: {
+        exampleWorkflow: exampleWorkflow,
+      },
       options: {
         connectionString: 'dummy',
         instanceId: EXECUTOR_ID,
       },
     });
 
-    const run = await instance.runWorkflow(exampleWorkflow, workflowArgs, { timeout: 1000 });
+    const run = await instance.runWorkflow('exampleWorkflow', workflowArgs, { timeout: 1000 });
 
     const status = await run.getStatus();
 
@@ -72,20 +74,19 @@ describe('Workflows', () => {
     const { promise, reject } = createPromise();
 
     const workflowName = 'exampleWorkflow';
-    const exampleWorkflow = defineWorkflow(
-      'exampleWorkflow',
-      createSimpleWorkflow([() => Promise.resolve(promise)]),
-    );
+    const exampleWorkflow = defineWorkflow(createSimpleWorkflow([() => Promise.resolve(promise)]));
 
-    const instance = createExecutor({
-      workflows: [exampleWorkflow],
+    const instance = createWorker({
+      workflows: {
+        exampleWorkflow: exampleWorkflow,
+      },
       options: {
         connectionString: 'dummy',
         instanceId: EXECUTOR_ID,
       },
     });
 
-    const run = await instance.runWorkflow(exampleWorkflow);
+    const run = await instance.runWorkflow('exampleWorkflow');
 
     const status = await run.getStatus();
 
@@ -124,17 +125,19 @@ describe('Workflows', () => {
     const db = getDb();
 
     const workflowName = 'exampleWorkflow';
-    const exampleWorkflow = defineWorkflow('exampleWorkflow', createSimpleWorkflow<void>([]));
+    const exampleWorkflow = defineWorkflow(createSimpleWorkflow<void>([]));
 
-    const instance = createExecutor({
-      workflows: [exampleWorkflow],
+    const instance = createWorker({
+      workflows: {
+        exampleWorkflow: exampleWorkflow,
+      },
       options: {
         connectionString: 'dummy',
         instanceId: EXECUTOR_ID,
       },
     });
 
-    const run = await instance.runWorkflow(exampleWorkflow);
+    const run = await instance.runWorkflow('exampleWorkflow');
 
     const result = await run.waitForResult();
     expect(result.success).toBe(true);
@@ -158,20 +161,19 @@ describe('Workflows', () => {
 
     const workflowName = 'exampleWorkflow';
     const { promise } = createPromise();
-    const exampleWorkflow = defineWorkflow(
-      'exampleWorkflow',
-      createSimpleWorkflow([() => Promise.resolve(promise)]),
-    );
+    const exampleWorkflow = defineWorkflow(createSimpleWorkflow([() => Promise.resolve(promise)]));
 
-    const instance = createExecutor({
-      workflows: [exampleWorkflow],
+    const instance = createWorker({
+      workflows: {
+        exampleWorkflow: exampleWorkflow,
+      },
       options: {
         connectionString: 'dummy',
         instanceId: EXECUTOR_ID,
       },
     });
 
-    const run = await instance.runWorkflow(exampleWorkflow);
+    const run = await instance.runWorkflow('exampleWorkflow');
 
     const status = await run.getStatus();
     expect(status).toBe('pending');
@@ -198,19 +200,20 @@ describe('Workflows', () => {
     const workflowName = 'exampleWorkflow';
     const { promise } = createPromise();
     const exampleWorkflow = defineWorkflow(
-      'exampleWorkflow',
       createSimpleWorkflow<void>([() => Promise.resolve(promise)]),
     );
 
-    const instance = createExecutor({
-      workflows: [exampleWorkflow],
+    const instance = createWorker({
+      workflows: {
+        exampleWorkflow: exampleWorkflow,
+      },
       options: {
         connectionString: 'dummy',
         instanceId: EXECUTOR_ID,
       },
     });
 
-    const run = await instance.runWorkflow(exampleWorkflow, { timeout: 100 });
+    const run = await instance.runWorkflow('exampleWorkflow', { timeout: 100 });
 
     const status = await run.getStatus();
     expect(status).toBe('pending');
@@ -237,20 +240,19 @@ describe('Workflows', () => {
     const db = getDb();
     const workflowName = 'exampleWorkflow';
     const { promise } = createPromise();
-    const exampleWorkflow = defineWorkflow(
-      'exampleWorkflow',
-      createSimpleWorkflow([() => Promise.resolve(promise)]),
-    );
+    const exampleWorkflow = defineWorkflow(createSimpleWorkflow([() => Promise.resolve(promise)]));
 
-    const instance = createExecutor({
-      workflows: [exampleWorkflow],
+    const instance = createWorker({
+      workflows: {
+        exampleWorkflow: exampleWorkflow,
+      },
       options: {
         connectionString: 'dummy',
         instanceId: EXECUTOR_ID,
       },
     });
 
-    const run = await instance.runWorkflow(exampleWorkflow, {
+    const run = await instance.runWorkflow('exampleWorkflow', {
       deadline: Date.now() + 100,
     });
 

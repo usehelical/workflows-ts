@@ -24,15 +24,15 @@ type RunWorkflowOperationResult = {
 
 export async function runWorkflow<TArgs extends unknown[], TReturn>(
   ctx: RuntimeContext | ExecutionContext,
-  wf: string,
+  workflowName: string,
   args: TArgs = [] as unknown as TArgs,
   options: RunWorkflowOptions = {},
 ) {
   const { db, executorId, workflowsMap, type } = ctx;
 
-  const workflow = workflowsMap[wf];
+  const workflow = workflowsMap[workflowName];
   if (!workflow) {
-    throw new WorkflowNotFoundError(wf);
+    throw new WorkflowNotFoundError(workflowName);
   }
 
   const newRunId = options.id ?? crypto.randomUUID();
@@ -53,7 +53,7 @@ export async function runWorkflow<TArgs extends unknown[], TReturn>(
       const newRun: RunWorkflowOperationResult = {
         runId: newRunId,
         runPath: [...runPath, newRunId],
-        workflowName: workflow.name,
+        workflowName: workflowName,
       };
       withDbRetry(async () => {
         return await insertPendingRun(db, {
@@ -75,7 +75,7 @@ export async function runWorkflow<TArgs extends unknown[], TReturn>(
       path: [newRunId],
       inputs: serialize(args),
       executorId: executorId,
-      workflowName: workflow.name,
+      workflowName: workflowName,
     });
     newRunPath = path;
   }
@@ -83,7 +83,7 @@ export async function runWorkflow<TArgs extends unknown[], TReturn>(
   await executeWorkflow<TArgs, TReturn>(ctx, {
     runId: newRunId,
     runPath: newRunPath,
-    workflowName: workflow.name,
+    workflowName: workflowName,
     fn: workflow.fn as WorkflowFunction<TArgs, TReturn>,
     args,
     options,

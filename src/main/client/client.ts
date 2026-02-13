@@ -15,41 +15,24 @@ import { MessageDefinition } from '@api/message';
 import { sendMessage } from '@internal/send-message';
 import { StateDefinition } from '@api/state';
 import { getState } from '@internal/get-state';
-import { WorkflowDefinition, WorkflowSignature } from '@api/workflow';
-import { QueueDefinition, QueueSignature } from '@api/queue';
-import { Executor, WorkflowOperations } from '../executor';
+import { WorkflowDefinition } from '@api/workflow';
+import { QueueDefinition } from '@api/queue';
+import { Worker, WorkflowOperations } from '../worker';
 
-type ExtractWorkflows<T> = T extends Executor<infer W, any> ? W : never;
+type ExtractWorkflows<T> = T extends Worker<infer W, any> ? W : never;
 
-type ExtractQueues<T> = T extends Executor<any, infer Q> ? Q : never;
+type ExtractQueues<T> = T extends Worker<any, infer Q> ? Q : never;
 
-type QueuesProxy<TQueues extends Record<string, QueueDefinition>> = {
-  [K in keyof TQueues]: {
-    name: K;
-    definition: TQueues[K];
-  };
-};
-
-type WorkflowsProxy<TWorkflows extends Record<string, WorkflowDefinition<unknown[], unknown>>> = {
-  [K in keyof TWorkflows]: {
-    name: K;
-    definition: TWorkflows[K];
-  };
-};
-
-interface Client<
+type Client<
   TWorkflows extends Record<string, WorkflowDefinition<unknown[], unknown>>,
   TQueues extends Record<string, QueueDefinition>,
-> extends WorkflowOperations<ExtractWorkflows<TWorkflows>, ExtractQueues<TQueues>> {
-  workflows: WorkflowsProxy<TWorkflows>;
-  queues: QueuesProxy<TQueues>;
-}
+> = WorkflowOperations<TWorkflows, TQueues>;
 
 type ClientOptions = {
   connectionString: string;
 };
 
-export function createClient<TExecutor extends Executor<any, any>>(
+export function createClient<TExecutor extends Worker<any, any>>(
   options: ClientOptions,
 ): Client<ExtractWorkflows<TExecutor>, ExtractQueues<TExecutor>> {
   const { db, client } = createPgDriver({ connectionString: options.connectionString });
@@ -71,35 +54,24 @@ export function createClient<TExecutor extends Executor<any, any>>(
     messages: messageEventBus.handleNotify.bind(messageEventBus),
   });
 
-  const workflows = new Proxy({} as any, {
-    get(_target, prop: string) {
-      return {
-        name: prop,
-        // Could include type metadata if needed
-      };
-    },
-  });
-
-  const queues = new Proxy({} as any, {
-    get(_target, prop: string) {
-      return {
-        name: prop,
-        // Could include type metadata if needed
-      };
-    },
-  });
-
   return {
-    workflows,
-    queues,
     queueWorkflow: async <TArgs extends unknown[], TReturn>(
-      queue: QueueSignature,
-      wf: WorkflowSignature<TArgs, TReturn>,
-      args?: TArgs,
+      queueName: string,
+      workflowName: string,
+      argsOrOptions?: TArgs | QueueWorkflowOptions,
       options?: QueueWorkflowOptions,
     ) => {
       await notifySetupPromise;
-      return queueWorkflow<TArgs, TReturn>(clientContext, queue.name, wf.name, args, options);
+      let args, opts;
+      if (argsOrOptions !== undefined) {
+        if (Array.isArray(argsOrOptions)) {
+          args = argsOrOptions;
+          opts = options;
+        } else {
+          opts = argsOrOptions;
+        }
+      }
+      return queueWorkflow<TArgs, TReturn>(clientContext, queueName, workflowName, args, opts);
     },
     cancelRun: async (runId: string) => cancelRun(clientContext, runId),
     resumeRun: async (runId: string) => resumeRun(clientContext, runId),

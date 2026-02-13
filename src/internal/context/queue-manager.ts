@@ -18,16 +18,16 @@ const POLLING_INTERVAL_MS = 1000;
 
 export class QueueManager {
   private readonly pollingLoop: PollingLoop;
-  private readonly queues: QueueDefinition[];
+  private readonly queues: Record<string, QueueDefinition>;
 
   constructor(private readonly ctx: RuntimeContext) {
     this.pollingLoop = new PollingLoop(POLLING_INTERVAL_MS, this.handlePoll.bind(this));
-    this.queues = this.ctx.queueRegistry;
+    this.queues = ctx.queueRegistry;
   }
 
   private async handlePoll() {
-    for (const queue of this.queues) {
-      await this.dispatch(queue.name, queue);
+    for (const [queueName, queue] of Object.entries(this.queues)) {
+      await this.dispatch(queueName, queue);
     }
   }
 

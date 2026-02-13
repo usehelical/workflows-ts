@@ -34,8 +34,12 @@ describe('QueueManager', () => {
 
     const setup = createTestRuntimeContext({
       executorId: 'test-executor',
-      workflows: [defineWorkflow('testWorkflow', workflowFn)],
-      queues: [defineQueue('testQueue', { concurrency: 1 })],
+      workflows: {
+        testWorkflow: defineWorkflow(workflowFn),
+      },
+      queues: {
+        testQueue: defineQueue({ concurrency: 1 }),
+      },
     });
 
     const ctx = setup.ctx;
@@ -80,8 +84,10 @@ describe('QueueManager', () => {
     const db = getDb();
     const setup = createTestRuntimeContext({
       executorId: 'test-executor',
-      workflows: [],
-      queues: [defineQueue('testQueue', { concurrency: 1 })],
+      workflows: {},
+      queues: {
+        testQueue: defineQueue({ concurrency: 1 }),
+      },
     });
     const ctx = setup.ctx;
     await setup.notifySetup;

@@ -1,6 +1,6 @@
 import { describe, it } from 'vitest';
 import { setupIntegrationTest } from './test-utils';
-import { createExecutor } from '../main/executor';
+import { createWorker } from '../main/worker';
 import { defineWorkflow } from '../api/workflow';
 import { defineQueue } from '../api/queue';
 import { sleep } from '@internal/utils/sleep';
@@ -22,23 +22,24 @@ describe('Queue', () => {
       };
 
       const exampleWorkflow = defineWorkflow(
-        'exampleWorkflow',
         createSimpleWorkflow([() => Promise.resolve()], workflowArgs, () => {
           return workflowOutput;
         }),
       );
 
-      const exampleQueue = defineQueue('exampleQueue');
+      const exampleQueue = defineQueue();
 
-      const instance = createExecutor({
-        workflows: [exampleWorkflow],
+      const instance = createWorker({
+        workflows: {
+          exampleWorkflow: exampleWorkflow,
+        },
         options: {
           connectionString: 'dummy',
           instanceId,
         },
       });
 
-      const run = await instance.queueWorkflow(exampleQueue, exampleWorkflow, workflowArgs, {
+      const run = await instance.queueWorkflow('exampleQueue', 'exampleWorkflow', workflowArgs, {
         timeout: 1000,
       });
 
@@ -53,9 +54,13 @@ describe('Queue', () => {
       });
 
       // spawn new instance that can take the workflow out of the queue
-      createExecutor({
-        workflows: [exampleWorkflow],
-        queues: [exampleQueue],
+      createWorker({
+        workflows: {
+          exampleWorkflow: exampleWorkflow,
+        },
+        queues: {
+          exampleQueue: exampleQueue,
+        },
         options: {
           connectionString: 'dummy',
           instanceId: 'instance-2',
@@ -90,25 +95,27 @@ describe('Queue', () => {
       };
 
       const exampleWorkflow = defineWorkflow(
-        'exampleWorkflow',
         createSimpleWorkflow([() => Promise.resolve()], workflowArgs, () => {
           return workflowOutput;
         }),
       );
 
-      const exampleQueue = defineQueue('exampleQueue');
+      const exampleQueue = defineQueue();
 
-      const instance = createExecutor({
-        workflows: [exampleWorkflow],
-        queues: [exampleQueue],
+      const instance = createWorker({
+        workflows: {
+          exampleWorkflow,
+        },
+        queues: {
+          exampleQueue,
+        },
         options: {
           connectionString: 'dummy',
           instanceId,
         },
       });
 
-      // @ts-expect-error - args is optional
-      const run = await instance.queueWorkflow('exampleQueue', exampleWorkflow, workflowArgs, {
+      const run = await instance.queueWorkflow('exampleQueue', 'exampleWorkflow', workflowArgs, {
         timeout: 1000,
       });
 
@@ -142,24 +149,27 @@ describe('Queue', () => {
       };
 
       const exampleWorkflow = defineWorkflow(
-        'exampleWorkflow',
         createSimpleWorkflow([() => Promise.resolve()], workflowArgs, () => {
           return workflowOutput;
         }),
       );
 
-      const exampleQueue = defineQueue('exampleQueue');
+      const exampleQueue = defineQueue();
 
-      const instance = createExecutor({
-        workflows: [exampleWorkflow],
-        queues: [exampleQueue],
+      const instance = createWorker({
+        workflows: {
+          exampleWorkflow: exampleWorkflow,
+        },
+        queues: {
+          exampleQueue: exampleQueue,
+        },
         options: {
           connectionString: 'dummy',
           instanceId,
         },
       });
 
-      const run = await instance.queueWorkflow(exampleQueue, exampleWorkflow, workflowArgs, {
+      const run = await instance.queueWorkflow('exampleQueue', 'exampleWorkflow', workflowArgs, {
         timeout: 1000,
       });
 

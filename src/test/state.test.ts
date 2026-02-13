@@ -1,5 +1,5 @@
 import { setupIntegrationTest } from './test-utils';
-import { createExecutor } from '../main/executor';
+import { createWorker } from '../main/worker';
 import { defineState } from '../api/state';
 import { setState } from '../api/steps/set-state';
 import { defineWorkflow } from '../api/workflow';
@@ -19,7 +19,6 @@ describe('State', () => {
     const data = { name: 'John', progress: 50 };
 
     const workflow = defineWorkflow(
-      'test-workflow',
       createSimpleWorkflow([
         async () => {
           await setState(state, data);
@@ -27,14 +26,16 @@ describe('State', () => {
       ]),
     );
 
-    const instance = createExecutor({
-      workflows: [workflow],
+    const instance = createWorker({
+      workflows: {
+        'test-workflow': workflow,
+      },
       options: {
         connectionString: 'dummy',
       },
     });
 
-    const run = await instance.runWorkflow(workflow);
+    const run = await instance.runWorkflow('test-workflow');
     await run.waitForResult();
     const stateResult = await instance.getState(run, state);
     expect(stateResult).toEqual(data);
