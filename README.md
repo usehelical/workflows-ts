@@ -69,7 +69,7 @@ export const worker = createWorker({
 });
 ```
 
-## Starting a worker
+## Starting a workflow
 
 Pass the workflow to the runWorkflow function and pass the arguments to the workflow as an array. The waitForResult function will await the workflow completion.
 
