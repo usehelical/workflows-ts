@@ -29,9 +29,7 @@ describe('recoverPendingRuns', () => {
 
     const setup = createTestRuntimeContext({
       executorId: 'test-executor',
-      workflows: {
-        testWorkflow: defineWorkflow(workflowFn),
-      },
+      workflows: [defineWorkflow('testWorkflow', workflowFn)],
     });
     const ctx = setup.ctx;
     await setup.notifySetup;
@@ -72,7 +70,7 @@ describe('recoverPendingRuns', () => {
     const db = getDb();
     const setup = createTestRuntimeContext({
       executorId: 'test-executor',
-      workflows: {},
+      workflows: [],
     });
     const ctx = setup.ctx;
     await setup.notifySetup;
@@ -123,10 +121,10 @@ describe('recoverPendingRuns', () => {
 
     const setup = createTestRuntimeContext({
       executorId: 'test-executor',
-      workflows: {
-        workflow1: defineWorkflow(workflowFn1),
-        workflow2: defineWorkflow(workflowFn2),
-      },
+      workflows: [
+        defineWorkflow('workflow1', workflowFn1),
+        defineWorkflow('workflow2', workflowFn2),
+      ],
     });
     const ctx = setup.ctx;
     await setup.notifySetup;
@@ -176,9 +174,7 @@ describe('recoverPendingRuns', () => {
 
     const setup = createTestRuntimeContext({
       executorId: 'test-executor',
-      workflows: {
-        testWorkflow: defineWorkflow(workflowFn),
-      },
+      workflows: [defineWorkflow('testWorkflow', workflowFn)],
     });
     const ctx = setup.ctx;
     await setup.notifySetup;

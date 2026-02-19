@@ -1,6 +1,6 @@
 export interface StateDefinition<T> {
   name: string;
-  data?: T;
+  __data?: T;
 }
 
 export function defineState<T>(name: string) {

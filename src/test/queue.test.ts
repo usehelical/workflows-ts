@@ -4,7 +4,7 @@ import { createWorker } from '../main/worker';
 import { defineWorkflow } from '../api/workflow';
 import { defineQueue } from '../api/queue';
 import { sleep } from '@internal/utils/sleep';
-import { checkRunInDb, checkStepInDb, createSimpleWorkflow } from './test-helpers';
+import { checkRunInDb, checkStepInDb } from './test-helpers';
 
 const { getDb } = setupIntegrationTest();
 
@@ -22,24 +22,24 @@ describe('Queue', () => {
       };
 
       const exampleWorkflow = defineWorkflow(
-        createSimpleWorkflow([() => Promise.resolve()], workflowArgs, () => {
+        'exampleWorkflow',
+        async (...args: typeof workflowArgs) => {
+          expect(args).toEqual(workflowArgs);
           return workflowOutput;
-        }),
+        },
       );
 
-      const exampleQueue = defineQueue();
+      const exampleQueue = defineQueue('exampleQueue');
 
       const instance = createWorker({
-        workflows: {
-          exampleWorkflow: exampleWorkflow,
-        },
+        workflows: [exampleWorkflow],
         options: {
           connectionString: 'dummy',
           instanceId,
         },
       });
 
-      const run = await instance.queueWorkflow('exampleQueue', 'exampleWorkflow', workflowArgs, {
+      const run = await instance.queueWorkflow(exampleQueue, exampleWorkflow, workflowArgs, {
         timeout: 1000,
       });
 
@@ -55,12 +55,8 @@ describe('Queue', () => {
 
       // spawn new instance that can take the workflow out of the queue
       createWorker({
-        workflows: {
-          exampleWorkflow: exampleWorkflow,
-        },
-        queues: {
-          exampleQueue: exampleQueue,
-        },
+        workflows: [exampleWorkflow],
+        queues: [exampleQueue],
         options: {
           connectionString: 'dummy',
           instanceId: 'instance-2',
@@ -78,9 +74,6 @@ describe('Queue', () => {
         expectedStatus: 'success',
         result: workflowOutput,
       });
-      await checkStepInDb(db, run.id, {
-        sequenceNumber: 0,
-      });
     });
 
     it.todo('should queue workflow by name string', async () => {
@@ -95,27 +88,25 @@ describe('Queue', () => {
       };
 
       const exampleWorkflow = defineWorkflow(
-        createSimpleWorkflow([() => Promise.resolve()], workflowArgs, () => {
+        'exampleWorkflow',
+        async (...args: typeof workflowArgs) => {
+          expect(args).toEqual(workflowArgs);
           return workflowOutput;
-        }),
+        },
       );
 
-      const exampleQueue = defineQueue();
+      const exampleQueue = defineQueue('exampleQueue');
 
       const instance = createWorker({
-        workflows: {
-          exampleWorkflow,
-        },
-        queues: {
-          exampleQueue,
-        },
+        workflows: [exampleWorkflow],
+        queues: [exampleQueue],
         options: {
           connectionString: 'dummy',
           instanceId,
         },
       });
 
-      const run = await instance.queueWorkflow('exampleQueue', 'exampleWorkflow', workflowArgs, {
+      const run = await instance.queueWorkflow(exampleQueue, exampleWorkflow, workflowArgs, {
         timeout: 1000,
       });
 
@@ -149,27 +140,25 @@ describe('Queue', () => {
       };
 
       const exampleWorkflow = defineWorkflow(
-        createSimpleWorkflow([() => Promise.resolve()], workflowArgs, () => {
+        'exampleWorkflow',
+        async (...args: typeof workflowArgs) => {
+          expect(args).toEqual(workflowArgs);
           return workflowOutput;
-        }),
+        },
       );
 
-      const exampleQueue = defineQueue();
+      const exampleQueue = defineQueue('exampleQueue');
 
       const instance = createWorker({
-        workflows: {
-          exampleWorkflow: exampleWorkflow,
-        },
-        queues: {
-          exampleQueue: exampleQueue,
-        },
+        workflows: [exampleWorkflow],
+        queues: [exampleQueue],
         options: {
           connectionString: 'dummy',
           instanceId,
         },
       });
 
-      const run = await instance.queueWorkflow('exampleQueue', 'exampleWorkflow', workflowArgs, {
+      const run = await instance.queueWorkflow(exampleQueue, exampleWorkflow, workflowArgs, {
         timeout: 1000,
       });
 

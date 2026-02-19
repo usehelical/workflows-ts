@@ -3,7 +3,6 @@ import { createWorker } from '../main/worker';
 import { defineMessage } from '../api/message';
 import { receiveMessage } from '../api/steps/receive-message';
 import { defineWorkflow } from '../api/workflow';
-import { createSimpleWorkflow } from './test-helpers';
 
 setupIntegrationTest();
 
@@ -16,30 +15,24 @@ describe('Message', () => {
   it('should send and receive a message', async () => {
     const mockMessage = defineMessage<MockMessage>('mock-message');
 
-    const exampleWorkflow = defineWorkflow(
-      createSimpleWorkflow([
-        async () => {
-          return await receiveMessage(mockMessage);
-        },
-      ]),
-    );
+    const exampleWorkflow = defineWorkflow('exampleWorkflow', async () => {
+      return await receiveMessage(mockMessage);
+    });
 
-    const instance = createWorker({
-      workflows: {
-        exampleWorkflow: exampleWorkflow,
-      },
+    const api = createWorker({
+      workflows: [exampleWorkflow],
       options: {
         connectionString: 'dummy',
         instanceId: 'm',
       },
     });
 
-    const run = await instance.runWorkflow('exampleWorkflow');
+    const run = await api.runWorkflow(exampleWorkflow);
 
     const status = await run.getStatus();
     expect(status).toBe('pending');
 
-    instance.sendMessage(run, mockMessage, { name: 'John', age: 20 });
+    api.sendMessage(run.id, mockMessage, { name: 'John', age: 20 });
 
     const status2 = await run.getStatus();
     expect(status2).toBe('pending');

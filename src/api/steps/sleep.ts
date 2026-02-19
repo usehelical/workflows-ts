@@ -2,11 +2,9 @@ import { RunCancelledError } from '@internal/errors';
 import { getExecutionContext } from '@internal/context/execution-context';
 import { withDurableDeadline } from '@internal/with-durable-deadline';
 
-const SLEEP_OPERATION_NAME = '_helical::sleep';
-
 export async function sleep(ms: number) {
   const { abortSignal } = getExecutionContext();
-  return await withDurableDeadline(ms, SLEEP_OPERATION_NAME, async (deadlineMs) => {
+  return await withDurableDeadline(ms, 'sleep', async (deadlineMs) => {
     const remainingMs = deadlineMs! - Date.now();
     try {
       await cancellableSleep(remainingMs, abortSignal);

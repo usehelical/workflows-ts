@@ -1,25 +1,6 @@
 import { Database } from '@internal/db/db';
 import { deserializeError, serialize } from '@internal/utils/serialization';
-import { runStep } from '../api/steps/run-step';
 import { RunStatus } from '../api/workflow';
-
-export function createSimpleWorkflow<TReturn = unknown>(
-  steps: (() => Promise<unknown>)[] = [],
-  args?: unknown[],
-  returnFn?: (stepResults: unknown[]) => TReturn,
-) {
-  return async (): Promise<TReturn> => {
-    const stepResults = [];
-    for (const step of steps) {
-      stepResults.push(await runStep(step));
-    }
-    if (returnFn) {
-      return returnFn(stepResults);
-    }
-    // Return last step result if no returnFn provided
-    return stepResults[stepResults.length - 1] as TReturn;
-  };
-}
 
 export function createPromise<T>() {
   let resolvePromise: (v: T) => void;

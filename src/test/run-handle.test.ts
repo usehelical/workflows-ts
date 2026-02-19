@@ -1,7 +1,7 @@
 import { setupIntegrationTest } from './test-utils';
 import { createWorker } from '../main/worker';
 import { defineWorkflow } from '../api/workflow';
-import { createPromise, createSimpleWorkflow } from './test-helpers';
+import { createPromise } from './test-helpers';
 import { sleep } from '@internal/utils/sleep';
 
 setupIntegrationTest();
@@ -9,27 +9,22 @@ setupIntegrationTest();
 describe('Run Handle', () => {
   it('should get the status of a run', async () => {
     const { promise, resolve } = createPromise();
-    const exampleWorkflow = defineWorkflow(
-      createSimpleWorkflow([() => Promise.resolve(promise)], [], () => {
-        return { greeting: 'Hello, World!' };
-      }),
-    );
+    const exampleWorkflow = defineWorkflow('exampleWorkflow', async () => {
+      await promise;
+      return { greeting: 'Hello, World!' };
+    });
 
     const instance = createWorker({
-      workflows: {
-        exampleWorkflow: exampleWorkflow,
-      },
+      workflows: [exampleWorkflow],
       options: { connectionString: 'dummy', instanceId: 'test-instance' },
     });
 
-    const run = await instance.runWorkflow('exampleWorkflow');
+    const run = await instance.runWorkflow(exampleWorkflow);
     let status = await run.getStatus();
     expect(status).toBe('pending');
 
     const instance2 = createWorker({
-      workflows: {
-        exampleWorkflow: exampleWorkflow,
-      },
+      workflows: [exampleWorkflow],
       options: { connectionString: 'dummy', instanceId: 'test-instance-2' },
     });
 

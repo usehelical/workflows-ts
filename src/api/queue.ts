@@ -11,8 +11,13 @@ export type QueueOptions = {
   partitioningEnabled?: boolean;
 };
 
-export type QueueDefinition = QueueOptions;
+export type QueueDefinition = QueueOptions & {
+  name: string;
+};
 
-export function defineQueue(options: QueueOptions = {}): QueueDefinition {
-  return options;
+export function defineQueue(name: string, options: QueueOptions = {}): QueueDefinition {
+  return {
+    name,
+    ...options,
+  };
 }

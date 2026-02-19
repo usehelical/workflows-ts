@@ -16,17 +16,20 @@ export const TERMINAL_STATES: RunStatus[] = [
 export type WorkflowFunction<Args extends unknown[], R> = (...args: Args) => Promise<R> | R;
 
 export type WorkflowDefinition<TArgs extends unknown[] = unknown[], TReturn = unknown> = {
+  name: string;
   fn: WorkflowFunction<TArgs, TReturn>;
   maxRecoveryAttempts?: number;
 };
 
 export function defineWorkflow<TArgs extends unknown[], TReturn>(
+  name: string,
   fn: WorkflowFunction<TArgs, TReturn>,
   options: {
     maxRecoveryAttempts?: number;
   } = {},
 ): WorkflowDefinition<TArgs, TReturn> {
   return {
+    name,
     fn,
     maxRecoveryAttempts: options.maxRecoveryAttempts,
   };

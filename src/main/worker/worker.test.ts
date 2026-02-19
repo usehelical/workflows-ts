@@ -1,15 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import { setupIntegrationTest } from '../../test/test-utils';
 import { createWorker } from '.';
-import { createSimpleWorkflow } from '../../test/test-helpers';
+
 import { defineWorkflow } from '../../api';
 
 const { getDb } = setupIntegrationTest();
 
 describe('Workflow Runtime with PGLite', () => {
-  it('should setup notify listeners', async () => { });
+  it('should setup notify listeners', async () => {});
 
-  it('should setup queue manager', async () => { });
+  it('should setup queue manager', async () => {});
 
   it('should recover pending runs', async () => {
     const db = getDb();
@@ -25,12 +25,12 @@ describe('Workflow Runtime with PGLite', () => {
       })
       .execute();
 
-    const testWorkflow = defineWorkflow(createSimpleWorkflow());
+    const testWorkflow = defineWorkflow('testWorkflow', async () => {
+      return { greeting: 'Hello, World!' };
+    });
 
     const instance = createWorker({
-      workflows: {
-        testWorkflow: testWorkflow,
-      },
+      workflows: [testWorkflow],
       options: {
         connectionString: 'dummy',
         instanceId: 'test-executor',

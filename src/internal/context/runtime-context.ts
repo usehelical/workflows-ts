@@ -15,5 +15,5 @@ export interface RuntimeContext {
   runEventBus: RunEventBus;
   runRegistry: RunRegistry;
   workflowsMap: Record<string, WorkflowDefinition<unknown[], unknown>>;
-  queueRegistry: Record<string, QueueDefinition>;
+  queueRegistry: QueueDefinition[];
 }

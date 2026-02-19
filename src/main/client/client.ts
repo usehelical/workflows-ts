@@ -7,7 +7,7 @@ import { ClientContext } from '@internal/context/client-context';
 import { setupPostgresNotify } from '@internal/events/setup-postgres-notify';
 import { cancelRun } from '@internal/cancel-run';
 import { resumeRun } from '@internal/resume-run';
-import { createRunHandle } from '../../internal/run';
+import { createRunHandle, Run, RunResult } from '../../internal/run';
 import { getRunStatus } from '@internal/get-run-status';
 import { waitForRunResult } from '@internal/wait-for-run-result';
 import { queueWorkflow, QueueWorkflowOptions } from '@internal/queue-workflow';
@@ -16,25 +16,88 @@ import { sendMessage } from '@internal/send-message';
 import { StateDefinition } from '@api/state';
 import { getState } from '@internal/get-state';
 import { WorkflowDefinition } from '@api/workflow';
-import { QueueDefinition } from '@api/queue';
-import { Worker, WorkflowOperations } from '../worker';
+import { Worker } from '../worker';
 
-type ExtractWorkflows<T> = T extends Worker<infer W, any> ? W : never;
+type ExtractWorkflowNames<T> =
+  T extends Worker<infer W, any>
+    ? W extends ReadonlyArray<infer Item>
+      ? Item extends { name: infer Name extends string }
+        ? Name
+        : never
+      : never
+    : never;
 
-type ExtractQueues<T> = T extends Worker<any, infer Q> ? Q : never;
+type ExtractQueueNames<T> =
+  T extends Worker<any, infer Q>
+    ? Q extends Array<infer Item>
+      ? Item extends { name: infer Name }
+        ? Name
+        : never
+      : never
+    : never;
 
-type Client<
-  TWorkflows extends Record<string, WorkflowDefinition<unknown[], unknown>>,
-  TQueues extends Record<string, QueueDefinition>,
-> = WorkflowOperations<TWorkflows, TQueues>;
+type GetWorkflowByName<TWorker, Name extends string> =
+  TWorker extends Worker<infer W, any> ? Extract<W[number], { name: Name }> : never;
+
+export interface Client<TWorker extends Worker<any, any>> {
+  // queueWorkflow overloads
+  queueWorkflow<
+    QName extends ExtractQueueNames<TWorker>,
+    WName extends ExtractWorkflowNames<TWorker>,
+    TWorkflow extends WorkflowDefinition<any, any> = GetWorkflowByName<TWorker, WName>,
+    TArgs extends unknown[] = TWorkflow extends WorkflowDefinition<infer A, unknown> ? A : never,
+    TReturn = TWorkflow extends WorkflowDefinition<unknown[], infer R> ? R : never,
+  >(
+    queueName: QName,
+    workflowName: WName,
+    args: TArgs,
+    options?: QueueWorkflowOptions,
+  ): Promise<Run<TReturn>>;
+
+  queueWorkflow<
+    QName extends ExtractQueueNames<TWorker>,
+    WName extends ExtractWorkflowNames<TWorker>,
+    TWorkflow extends WorkflowDefinition<any, any> = GetWorkflowByName<TWorker, WName>,
+    TReturn = TWorkflow extends WorkflowDefinition<unknown[], infer R> ? R : never,
+  >(
+    queueName: QName,
+    workflowName: WName,
+    options: QueueWorkflowOptions,
+  ): Promise<Run<TReturn>>;
+
+  queueWorkflow<
+    QName extends ExtractQueueNames<TWorker>,
+    WName extends ExtractWorkflowNames<TWorker>,
+    TWorkflow extends WorkflowDefinition<any, any> = GetWorkflowByName<TWorker, WName>,
+    TReturn = TWorkflow extends WorkflowDefinition<unknown[], infer R> ? R : never,
+  >(
+    queueName: QName,
+    workflowName: WName,
+  ): Promise<Run<TReturn>>;
+
+  // Shared methods
+  cancelRun(runId: string): Promise<void>;
+  resumeRun(runId: string): Promise<void>;
+  getRun<TWorkflow extends WorkflowDefinition<unknown[], unknown>>(
+    runId: string,
+  ): Promise<Run<TWorkflow extends WorkflowDefinition<unknown[], infer R> ? R : never>>;
+  getRun<TReturn>(runId: string): Promise<Run<TReturn>>;
+  getRunStatus(runId: string): Promise<string>;
+  waitForRunResult<TWorkflow extends WorkflowDefinition<unknown[], unknown>>(
+    runId: string,
+  ): Promise<RunResult<TWorkflow extends WorkflowDefinition<unknown[], infer R> ? R : never>>;
+  waitForRunResult<TReturn>(runId: string): Promise<RunResult<TReturn>>;
+  sendMessage<T>(target: Run | string, name: MessageDefinition<T>, data: T): Promise<void>;
+  getState<T>(target: Run | string, key: StateDefinition<T> | string): Promise<T | undefined>;
+}
 
 type ClientOptions = {
   connectionString: string;
 };
 
-export function createClient<TExecutor extends Worker<any, any>>(
+export function createClient<TWorker extends Worker<any, any>>(
   options: ClientOptions,
-): Client<ExtractWorkflows<TExecutor>, ExtractQueues<TExecutor>> {
+): Client<TWorker> {
   const { db, client } = createPgDriver({ connectionString: options.connectionString });
   const messageEventBus = new MessageEventBus(db);
   const stateEventBus = new StateEventBus(db);

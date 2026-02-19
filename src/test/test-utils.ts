@@ -50,8 +50,8 @@ export function setupIntegrationTest() {
 export function createTestRuntimeContext(
   options: {
     executorId?: string;
-    workflows?: Record<string, WorkflowDefinition<unknown[], unknown>>;
-    queues?: Record<string, QueueDefinition>;
+    workflows?: WorkflowDefinition<unknown[], unknown>[];
+    queues?: QueueDefinition[];
   } = {},
 ): { ctx: RuntimeContext; notifySetup: Promise<void> } {
   const driver = createTestDriver();
@@ -72,8 +72,15 @@ export function createTestRuntimeContext(
     stateEventBus,
     runEventBus,
     runRegistry,
-    workflowsMap: options.workflows ?? {},
-    queueRegistry: options.queues ?? {},
+    workflowsMap:
+      options.workflows?.reduce(
+        (acc, workflow) => {
+          acc[workflow.name] = workflow;
+          return acc;
+        },
+        {} as Record<string, WorkflowDefinition<unknown[], unknown>>,
+      ) ?? {},
+    queueRegistry: options.queues ?? [],
   };
 
   // Set up PostgreSQL NOTIFY using the same function as production

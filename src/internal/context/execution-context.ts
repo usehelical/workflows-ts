@@ -22,7 +22,7 @@ export interface ExecutionContext {
   stateEventBus: StateEventBus;
   runEventBus: RunEventBus;
   runRegistry: RunRegistry;
-  queueRegistry: Record<string, QueueDefinition>;
+  queueRegistry: QueueDefinition[];
   workflowsMap: Record<string, WorkflowDefinition<unknown[], unknown>>;
   db: Database;
 }
