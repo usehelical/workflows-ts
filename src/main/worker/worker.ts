@@ -9,7 +9,7 @@ import { RunRegistry } from '@internal/context/run-registry';
 import { recoverPendingRuns } from '@internal/recover-pending-runs';
 import { RuntimeContext } from '@internal/context/runtime-context';
 import { RunEventBus } from '@internal/events/run-event-bus';
-import { createRunHandle, Run, RunResult } from '../../internal/run';
+import { createRunHandle, Run } from '../../internal/run';
 import { cancelRun } from '@internal/cancel-run';
 import { queueWorkflow, QueueWorkflowOptions } from '@internal/queue-workflow';
 import { QueueManager } from '@internal/context/queue-manager';
@@ -20,8 +20,15 @@ import { MessageDefinition } from '@api/message';
 import { sendMessage } from '@internal/send-message';
 import { StateDefinition } from '@api/state';
 import { getState } from '@internal/get-state';
-import { getRunStatus } from '@internal/get-run-status';
-import { waitForRunResult } from '@internal/wait-for-run-result';
+import type {
+  CancelRunFunction,
+  GetRunFunction,
+  GetStateFunction,
+  QueueWorkflowFunction,
+  ResumeRunFunction,
+  RunWorkflowFunction,
+  SendMessageFunction,
+} from '@api/external';
 
 type CreateInstanceOptions = {
   instanceId?: string;
@@ -43,52 +50,13 @@ export interface Worker<
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   TQueues extends ReadonlyArray<QueueDefinition>,
 > {
-  // Worker-specific: runWorkflow overloads
-  runWorkflow<TArgs extends unknown[], TReturn>(
-    workflowDefinition: WorkflowDefinition<TArgs, TReturn>,
-    options: RunWorkflowOptions,
-  ): Promise<Run<TReturn>>;
-
-  // Then the general one
-  runWorkflow<TArgs extends unknown[], TReturn>(
-    workflowDefinition: WorkflowDefinition<TArgs, TReturn>,
-    args?: TArgs,
-    options?: RunWorkflowOptions,
-  ): Promise<Run<TReturn>>;
-
-  // queueWorkflow overloads
-  queueWorkflow<TArgs extends unknown[], TReturn = unknown>(
-    queue: QueueDefinition,
-    workflow: WorkflowDefinition<TArgs, TReturn>,
-    args: TArgs,
-    options?: QueueWorkflowOptions,
-  ): Promise<Run<TReturn>>;
-
-  queueWorkflow<TArgs extends unknown[], TReturn = unknown>(
-    queue: QueueDefinition,
-    workflow: WorkflowDefinition<TArgs, TReturn>,
-    options: QueueWorkflowOptions,
-  ): Promise<Run<TReturn>>;
-
-  queueWorkflow<TArgs extends unknown[], TReturn = unknown>(
-    queue: QueueDefinition,
-    workflow: WorkflowDefinition<TArgs, TReturn>,
-  ): Promise<Run<TReturn>>;
-
-  // Shared methods
-  cancelRun(runId: string): Promise<void>;
-  resumeRun(runId: string): Promise<void>;
-  getRun<TWorkflow extends WorkflowDefinition<unknown[], unknown>>(
-    runId: string,
-  ): Promise<Run<TWorkflow extends WorkflowDefinition<unknown[], infer R> ? R : never>>;
-  getRun<TReturn>(runId: string): Promise<Run<TReturn>>;
-  getRunStatus(runId: string): Promise<string>;
-  waitForRunResult<TWorkflow extends WorkflowDefinition<unknown[], unknown>>(
-    runId: string,
-  ): Promise<RunResult<TWorkflow extends WorkflowDefinition<unknown[], infer R> ? R : never>>;
-  waitForRunResult<TReturn>(runId: string): Promise<RunResult<TReturn>>;
-  sendMessage<T>(runId: string, name: MessageDefinition<T>, data: T): Promise<void>;
-  getState<T>(runId: string, key: StateDefinition<T> | string): Promise<T | undefined>;
+  runWorkflow: RunWorkflowFunction;
+  queueWorkflow: QueueWorkflowFunction;
+  cancelRun: CancelRunFunction;
+  resumeRun: ResumeRunFunction;
+  getRun: GetRunFunction;
+  sendMessage: SendMessageFunction;
+  getState: GetStateFunction;
 }
 
 export function createWorker<
@@ -173,13 +141,8 @@ export function createWorker<
       await notifySetupPromise;
       return createRunHandle(runtimeContext, runId);
     },
-    waitForRunResult: async (runId: string) => {
-      await notifySetupPromise;
-      return waitForRunResult(runtimeContext, runId);
-    },
     cancelRun: async (runId: string) => cancelRun(runtimeContext, runId),
     resumeRun: async (runId: string) => resumeRun(runtimeContext, runId),
-    getRunStatus: async (runId: string) => getRunStatus(runtimeContext, runId),
     sendMessage: async <T>(target: Run | string, name: MessageDefinition<T>, data: T) => {
       await notifySetupPromise;
       return sendMessage(runtimeContext, target, name, data);
@@ -190,5 +153,3 @@ export function createWorker<
     },
   };
 }
-
-export type Instance = ReturnType<typeof createWorker>;

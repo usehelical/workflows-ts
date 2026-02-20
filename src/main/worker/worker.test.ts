@@ -37,8 +37,9 @@ describe('Workflow Runtime with PGLite', () => {
       },
     });
 
-    // await the runresult to be 'success'
-    const result = await instance.waitForRunResult('test-run-id');
+    const run = await instance.getRun('test-run-id');
+
+    const result = await run.waitForResult();
     expect(result.success).toBe(true);
   });
 });

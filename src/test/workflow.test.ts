@@ -6,6 +6,7 @@ import { sleep } from '@internal/utils/sleep';
 import { checkRunInDb, checkStepInDb, createPromise } from './test-helpers';
 import { RunDeadlineExceededError, RunTimedOutError } from '@internal/errors';
 import { runStep } from '@api/steps';
+import { runWorkflow } from '@api/external';
 
 const { getDb } = setupIntegrationTest();
 
@@ -277,5 +278,35 @@ describe('Workflows', () => {
       },
       EXECUTOR_ID,
     );
+  });
+
+  it('should run a child workflow', async () => {
+    const childWorkflow = defineWorkflow('childWorkflow', async () => {
+      return 'Hello, World!';
+    });
+
+    const exampleWorkflow = defineWorkflow('exampleWorkflow', async () => {
+      const { waitForResult } = await runWorkflow(childWorkflow);
+      const result = await waitForResult();
+      if (result.success) {
+        return result.data;
+      }
+      throw result.error;
+    });
+
+    const worker = createWorker({
+      workflows: [exampleWorkflow, childWorkflow],
+      options: {
+        connectionString: 'dummy',
+      },
+    });
+
+    const { waitForResult } = await worker.runWorkflow(exampleWorkflow);
+
+    const result = await waitForResult();
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toBe('Hello, World!');
+    }
   });
 });
