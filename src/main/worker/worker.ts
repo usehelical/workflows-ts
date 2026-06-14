@@ -6,7 +6,6 @@ import { StateEventBus } from '@internal/events/state-event-bus';
 import { MessageEventBus } from '@internal/events/message-event-bus';
 import { runWorkflow, RunWorkflowOptions } from '@internal/run-workflow';
 import { RunRegistry } from '@internal/context/run-registry';
-import { recoverPendingRuns } from '@internal/recover-pending-runs';
 import { RuntimeContext } from '@internal/context/runtime-context';
 import { RunEventBus } from '@internal/events/run-event-bus';
 import { createRunHandle, Run } from '../../internal/run';
@@ -20,6 +19,9 @@ import { MessageDefinition } from '@api/message';
 import { sendMessage } from '@internal/send-message';
 import { StateDefinition } from '@api/state';
 import { getState } from '@internal/get-state';
+import { resolveAppVersion } from '@internal/utils/resolve-app-version';
+import { RecoveryCoordinator } from '@internal/recovery/coordinator';
+import { LocalReaper } from '@internal/recovery/local-reaper';
 import type {
   CancelRunFunction,
   GetRunFunction,
@@ -33,6 +35,10 @@ import type {
 type CreateInstanceOptions = {
   instanceId?: string;
   connectionString: string;
+  /** Stable version string identifying this deployment (e.g. git SHA). Defaults to HELICAL_APP_VERSION env var, then 'dev' in non-production. */
+  appVersion?: string;
+  /** Custom recovery coordinator. Defaults to LocalReaper (in-process heartbeat + reaper). */
+  coordinator?: RecoveryCoordinator;
 };
 
 export type createWorkerParams<
@@ -57,6 +63,7 @@ export interface Worker<
   getRun: GetRunFunction;
   sendMessage: SendMessageFunction;
   getState: GetStateFunction;
+  stop: () => void;
 }
 
 export function createWorker<
@@ -67,6 +74,7 @@ export function createWorker<
   const messageEventBus = new MessageEventBus(db);
   const stateEventBus = new StateEventBus(db);
   const executorId = props.options.instanceId || crypto.randomUUID();
+  const appVersion = resolveAppVersion(props.options.appVersion);
   const runRegistry = new RunRegistry();
   const runEventBus = new RunEventBus(db);
 
@@ -82,6 +90,7 @@ export function createWorker<
     type: 'runtime',
     db,
     executorId,
+    appVersion,
     messageEventBus,
     stateEventBus,
     runRegistry,
@@ -99,7 +108,9 @@ export function createWorker<
   const queueManager = new QueueManager(runtimeContext);
   queueManager.start();
 
-  recoverPendingRuns(runtimeContext);
+  const coordinator: RecoveryCoordinator =
+    props.options.coordinator ?? new LocalReaper(runtimeContext);
+  coordinator.start();
 
   return {
     runWorkflow: async <TArgs extends unknown[] = unknown[], TReturn = unknown>(
@@ -150,6 +161,10 @@ export function createWorker<
     getState: async <T>(target: Run | string, key: StateDefinition<T>) => {
       await notifySetupPromise;
       return getState<T>(runtimeContext, target, key);
+    },
+    stop: () => {
+      coordinator.stop();
+      queueManager.destroy();
     },
   };
 }

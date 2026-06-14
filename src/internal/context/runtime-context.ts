@@ -10,6 +10,7 @@ export interface RuntimeContext {
   type: 'runtime';
   db: Database;
   executorId: string;
+  appVersion: string;
   messageEventBus: MessageEventBus;
   stateEventBus: StateEventBus;
   runEventBus: RunEventBus;

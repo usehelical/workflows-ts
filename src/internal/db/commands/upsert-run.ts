@@ -1,9 +1,6 @@
 import { sql } from 'kysely';
 import { RunStatus } from '../../../api/workflow';
 import { Database, Transaction } from '../db';
-import { MaxRecoveryAttemptsExceededError } from '../../errors';
-
-const DEFAULT_MAX_RETRIES = 10;
 
 export type UpsertRunOptions = {
   runId: string;
@@ -17,7 +14,6 @@ export type UpsertRunOptions = {
   timeout?: number;
   deadline?: number;
   isRecovery?: boolean;
-  maxRetries?: number;
   queueName?: string;
 };
 
@@ -60,15 +56,14 @@ export async function upsertRun(
     .onConflict((oc) =>
       oc.column('id').doUpdateSet({
         recovery_attempts: sql`CASE 
-            WHEN runs.status != 'QUEUED' 
+            WHEN runs.status != 'queued' 
             THEN runs.recovery_attempts + ${incrementAttempts}
             ELSE runs.recovery_attempts
           END`,
 
-        // Update executor_id when NEW status is not ENQUEUED
-        // This allows dequeue operations to claim the workflow
+        // Update executor_id when this is not a queued-status upsert
         executor_id: sql`CASE 
-            WHEN EXCLUDED.status != 'QUEUED' 
+            WHEN EXCLUDED.status != 'queued' 
             THEN EXCLUDED.executor_id
             ELSE runs.executor_id
           END`,
@@ -95,24 +90,9 @@ export async function upsertRun(
   const isOwner = result.idempotency_key === options.idempotencyKey;
   const shouldExecute = isOwner || options.isRecovery;
 
-  // Check max recovery attempts if authorized to execute
-  if (shouldExecute) {
-    const maxRetries = options.maxRetries ?? DEFAULT_MAX_RETRIES;
-    if ((result.recovery_attempts as unknown as number) > maxRetries + 1) {
-      // Mark as exceeded
-      await db
-        .updateTable('runs')
-        .set({
-          status: 'MAX_RECOVERY_ATTEMPTS_EXCEEDED',
-          updated_at: sql`(extract(epoch from now()) * 1000)::bigint`,
-        })
-        .where('id', '=', result.id)
-        .where('status', '=', 'PENDING')
-        .execute();
-
-      throw new MaxRecoveryAttemptsExceededError(result.id, maxRetries);
-    }
-  }
+  // Max-recovery-attempts enforcement is now handled by LocalReaper at claim
+  // time using lowercase statuses and the new lease-based recovery path.
+  // This branch is intentionally removed to avoid the uppercase status bug.
 
   return {
     runId: result.id,

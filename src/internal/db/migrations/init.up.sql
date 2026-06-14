@@ -19,6 +19,10 @@ create table runs (
     workflow_name text not null,
     executor_id text,
 
+    -- app_version is NULL for queued runs (not yet claimed) and stamped at execution start
+    app_version text,
+    lease_expires_at bigint,
+
     queue_name text,
     queue_partition_key text,
     queue_deduplication_id text,
@@ -32,7 +36,7 @@ create table runs (
 
 create function run_event_trigger() returns trigger as $$ 
 declare
-    payload text := new.id || '::' || new.status || '::' || new.change_id || '::' || new.queue_name || '::' || new.queue_partition_key;
+    payload text := concat_ws('::', new.id, new.status, new.change_id::text, new.queue_name, new.queue_partition_key);
 begin 
     perform pg_notify('helical_runs', payload);
     return new;
@@ -46,6 +50,17 @@ create index runs_executor_id on runs (executor_id);
 create index runs_status on runs (status);
 create index runs_forked_from on runs (forked_from_run_id);
 create index runs_path on runs using gin (path);
+-- version-scoped dequeue and reaper queries
+create index runs_status_app_version on runs (status, app_version);
+-- parked-run reporting
+create index runs_app_version_status on runs (app_version, status);
+
+create table workers (
+    id text primary key,
+    app_version text not null,
+    last_heartbeat_epoch_ms bigint not null,
+    started_at_epoch_ms bigint not null default (extract(epoch from now()) * 1000)::bigint
+);
 
 create table operations (
     run_id text not null,

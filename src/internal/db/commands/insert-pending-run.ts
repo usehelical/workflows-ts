@@ -7,6 +7,7 @@ export type InsertRunOptions = {
   inputs: string;
   executorId: string;
   workflowName: string;
+  appVersion: string;
 };
 
 export async function insertPendingRun(db: Database | Transaction, options: InsertRunOptions) {
@@ -18,6 +19,7 @@ export async function insertPendingRun(db: Database | Transaction, options: Inse
       inputs: options.inputs,
       executor_id: options.executorId,
       workflow_name: options.workflowName,
+      app_version: options.appVersion,
       status: 'pending',
       started_at_epoch_ms: sql`(extract(epoch from now()) * 1000)::bigint`,
       created_at: sql`(extract(epoch from now()) * 1000)::bigint`,

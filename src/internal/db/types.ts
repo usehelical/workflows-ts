@@ -32,6 +32,7 @@ export interface Operations {
 }
 
 export interface Runs {
+  app_version: string | null;
   change_id: Generated<number>;
   created_at: Generated<Int8>;
   deadline_epoch_ms: Int8 | null;
@@ -41,6 +42,7 @@ export interface Runs {
   id: Generated<string>;
   idempotency_key: string | null;
   inputs: string | null;
+  lease_expires_at: Int8 | null;
   output: string | null;
   parent_run_id: string | null;
   path: string[];
@@ -54,6 +56,13 @@ export interface Runs {
   timeout_ms: Int8 | null;
   updated_at: Generated<Int8>;
   workflow_name: string;
+}
+
+export interface Workers {
+  app_version: string;
+  id: string;
+  last_heartbeat_epoch_ms: Int8;
+  started_at_epoch_ms: Generated<Int8>;
 }
 
 export interface State {
@@ -77,4 +86,5 @@ export interface DB {
   runs: Runs;
   state: State;
   state_history: StateHistory;
+  workers: Workers;
 }

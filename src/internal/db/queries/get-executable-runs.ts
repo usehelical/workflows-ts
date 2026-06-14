@@ -7,6 +7,7 @@ import { DequeuedRun, dequeueRun } from '../commands/dequeue-run';
 type GetExecutableRunsParams = {
   queueName: string;
   executorId: string;
+  appVersion: string;
   workerConcurrency?: number;
   globalConcurrency?: number;
   rateLimit?: QueueRateLimit;
@@ -19,6 +20,7 @@ export async function getExecutableRuns(
   {
     queueName,
     executorId,
+    appVersion,
     workerConcurrency,
     globalConcurrency,
     rateLimit,
@@ -31,12 +33,13 @@ export async function getExecutableRuns(
 
   return await withDbRetry(async () =>
     db.transaction().execute(async (tx) => {
-      // rate limit check
+      // rate limit check (only count runs for this version)
       if (rateLimit) {
         const result = await tx
           .selectFrom('runs')
           .select(({ fn }) => [fn.count<number>('id').as('count')])
           .where('queue_name', '=', queueName)
+          .where('app_version', '=', appVersion)
           .where('status', '!=', 'queued')
           .where('started_at_epoch_ms', '>', (startTimeMs - limiterPeriodMs).toString())
           .$if(partitionKey !== undefined, (qb) =>
@@ -57,6 +60,7 @@ export async function getExecutableRuns(
           .selectFrom('runs')
           .select(['executor_id', ({ fn }) => fn.count<number>('id').as('task_count')])
           .where('queue_name', '=', queueName)
+          .where('app_version', '=', appVersion)
           .where('status', '=', 'pending')
           .$if(partitionKey !== undefined, (qb) =>
             qb.where('queue_partition_key', '=', partitionKey!),
@@ -92,6 +96,7 @@ export async function getExecutableRuns(
           FROM runs
           WHERE status = ${'queued'}
           AND queue_name = ${queueName}
+          AND (app_version IS NULL OR app_version = ${appVersion})
           ${partitionKey !== undefined ? sql`AND queue_partition_key = ${partitionKey}` : sql``}
         ${priorityEnabled ? sql`ORDER BY priority ASC, created_at ASC` : sql`ORDER BY created_at ASC`}
         ${maxTasks !== Infinity ? sql`LIMIT ${maxTasks}` : sql``}
@@ -101,7 +106,7 @@ export async function getExecutableRuns(
       const claimedRuns: DequeuedRun[] = [];
 
       for (const { id } of workflowIds.rows) {
-        const dequeuedRun = await dequeueRun(tx, id, executorId);
+        const dequeuedRun = await dequeueRun(tx, id, executorId, appVersion);
         claimedRuns.push(dequeuedRun);
       }
 

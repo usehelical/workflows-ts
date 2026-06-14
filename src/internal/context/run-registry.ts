@@ -35,4 +35,8 @@ export class RunRegistry {
   getRun(runId: string) {
     return this.runs.get(runId);
   }
+
+  getActiveRunIds(): string[] {
+    return [...this.runs.keys()];
+  }
 }

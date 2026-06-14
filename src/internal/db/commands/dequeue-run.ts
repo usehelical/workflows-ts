@@ -10,12 +10,14 @@ export type DequeuedRun = {
   deadlineEpochMs?: number;
   inputs?: string;
   workflowName: string;
+  appVersion: string;
 };
 
 export async function dequeueRun(
   tx: Transaction,
   runId: string,
   executorId: string,
+  appVersion: string,
 ): Promise<DequeuedRun> {
   const result = await tx
     .updateTable('runs')
@@ -24,6 +26,7 @@ export async function dequeueRun(
       started_at_epoch_ms: sql`(extract(epoch from now()) * 1000)::bigint`,
       updated_at: sql`(extract(epoch from now()) * 1000)::bigint`,
       executor_id: executorId,
+      app_version: appVersion,
     })
     .where('id', '=', runId)
     .where('status', '=', 'queued')
@@ -35,6 +38,7 @@ export async function dequeueRun(
       'deadline_epoch_ms',
       'inputs',
       'workflow_name',
+      'app_version',
     ])
     .executeTakeFirst();
 
@@ -50,5 +54,6 @@ export async function dequeueRun(
     deadlineEpochMs: result.deadline_epoch_ms ? Number(result.deadline_epoch_ms) : undefined,
     inputs: result.inputs ?? undefined,
     workflowName: result.workflow_name,
+    appVersion: result.app_version!,
   };
 }

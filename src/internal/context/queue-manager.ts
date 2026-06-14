@@ -32,7 +32,7 @@ export class QueueManager {
   }
 
   private async dispatch(queueName: string, queue: QueueInstance) {
-    const { db, executorId } = this.ctx;
+    const { db, executorId, appVersion } = this.ctx;
 
     let partitions: string[] = [];
 
@@ -43,6 +43,7 @@ export class QueueManager {
         const runs = await getExecutableRuns(db, {
           queueName,
           executorId,
+          appVersion,
           workerConcurrency: queue.workerConcurrency,
           globalConcurrency: queue.concurrency,
           rateLimit: queue.rateLimit,
@@ -70,6 +71,7 @@ export class QueueManager {
     const runs = await getExecutableRuns(db, {
       queueName,
       executorId,
+      appVersion,
       workerConcurrency: queue.workerConcurrency,
       globalConcurrency: queue.concurrency,
       rateLimit: queue.rateLimit,

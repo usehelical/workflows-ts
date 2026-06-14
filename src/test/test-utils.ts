@@ -50,6 +50,7 @@ export function setupIntegrationTest() {
 export function createTestRuntimeContext(
   options: {
     executorId?: string;
+    appVersion?: string;
     workflows?: WorkflowDefinition<unknown[], unknown>[];
     queues?: QueueDefinition[];
   } = {},
@@ -59,6 +60,7 @@ export function createTestRuntimeContext(
   const client = driver.client;
 
   const executorId = options.executorId ?? `test-executor-${crypto.randomUUID()}`;
+  const appVersion = options.appVersion ?? 'test-version';
   const messageEventBus = new MessageEventBus(db);
   const stateEventBus = new StateEventBus(db);
   const runEventBus = new RunEventBus(db);
@@ -68,6 +70,7 @@ export function createTestRuntimeContext(
     type: 'runtime',
     db,
     executorId,
+    appVersion,
     messageEventBus,
     stateEventBus,
     runEventBus,

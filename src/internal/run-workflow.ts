@@ -39,7 +39,7 @@ export async function runWorkflow<TArgs extends unknown[], TReturn>(
   let newRunPath: string[] = [];
 
   if (type === 'execution') {
-    const { operationManager, runPath } = ctx;
+    const { operationManager, runPath, appVersion } = ctx;
     const op = operationManager.getOperationResult();
     if (op) {
       if (op.error) {
@@ -55,12 +55,13 @@ export async function runWorkflow<TArgs extends unknown[], TReturn>(
         runPath: [...runPath, newRunId],
         workflowName: workflowName,
       };
-      withDbRetry(async () => {
+      await withDbRetry(async () => {
         return await insertPendingRun(db, {
           ...newRun,
           path: newRun.runPath,
           inputs: serialize(args),
           executorId: executorId,
+          appVersion: appVersion,
         });
       });
       return newRun;
@@ -76,6 +77,7 @@ export async function runWorkflow<TArgs extends unknown[], TReturn>(
       inputs: serialize(args),
       executorId: executorId,
       workflowName: workflowName,
+      appVersion: ctx.appVersion,
     });
     newRunPath = path;
   }

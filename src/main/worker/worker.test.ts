@@ -22,6 +22,9 @@ describe('Workflow Runtime with PGLite', () => {
         workflow_name: 'testWorkflow',
         status: 'pending',
         executor_id: 'test-executor',
+        // app_version must match the worker's resolved version; in non-production
+        // the default is 'dev' (from resolveAppVersion with no env var set).
+        app_version: 'dev',
       })
       .execute();
 

@@ -15,6 +15,8 @@ export interface ExecutionContext {
   runId: string;
   runPath: string[];
   executorId: string;
+  /** Pinned app version for this run — inherited by child workflows. */
+  appVersion: string;
   abortSignal: AbortSignal;
   parentWorkflow?: ExecutionContext;
   operationManager: OperationManager;
@@ -64,6 +66,7 @@ export function createExecutionContext({
     runId: runId,
     runPath: runPath,
     executorId: ctx.executorId,
+    appVersion: ctx.appVersion,
     abortSignal: abortSignal,
     operationManager: new OperationManager(ctx.db, runId, operations || []),
     messageEventBus: ctx.messageEventBus,
